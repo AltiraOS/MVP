@@ -41,6 +41,13 @@ export const LEVEL_LABELS: Record<LevelId, string> = {
 
 export const ROOF_LABEL = 'Roof'
 
+// Customer-facing names for each package, shown on the Pricing and Activate
+// steps alongside the routing reason from determineTier.
+export const TIER_LABELS: Record<'core' | 'pro', string> = {
+  core: 'Core',
+  pro: 'Pro',
+}
+
 // Grade-8, calm, design-led copy is the standard for everything the
 // customer sees. These words leak internal mechanics and must never appear
 // in customer-facing strings (brief §10).

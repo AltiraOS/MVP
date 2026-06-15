@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { assembleConcept } from './assemble'
 import { DEFAULT_BRIEF, deriveInitialSelections, FEELING_OPTIONS, PRIORITY_OPTIONS } from './brief'
 import { CARDS } from './cards'
-import { CATEGORY_DESCRIPTIONS, CATEGORY_LABELS, findBannedWords, LEVEL_LABELS, ROOF_LABEL } from './copy'
+import { CATEGORY_DESCRIPTIONS, CATEGORY_LABELS, findBannedWords, LEVEL_LABELS, ROOF_LABEL, TIER_LABELS } from './copy'
 import { determineTier } from './routing'
 import type { BriefAnswers } from './types'
 
@@ -39,6 +39,10 @@ describe('customer-facing copy', () => {
 
   it('contains no banned words in level labels', () => {
     expect(findBannedWords([...Object.values(LEVEL_LABELS), ROOF_LABEL])).toEqual([])
+  })
+
+  it('contains no banned words in tier labels', () => {
+    expect(findBannedWords(Object.values(TIER_LABELS))).toEqual([])
   })
 
   it('contains no banned words in a derived concept (Core and Pro)', () => {

@@ -1,15 +1,12 @@
 import { useEffect } from 'react'
-import { assembleConcept } from '../model/assemble'
-import { deriveInitialSelections } from '../model/brief'
 import { CategoryPanel } from '../components/CategoryPanel'
 import { ProgressTrail } from '../components/ProgressTrail'
 import { PlanView } from '../render/PlanView'
 import { SectionView } from '../render/SectionView'
-import { useConceptStore } from '../store/useConceptStore'
+import { useActiveSelections, useConcept, useConceptStore } from '../store/useConceptStore'
 
 export default function ShapePage() {
   const brief = useConceptStore((s) => s.brief)
-  const selections = useConceptStore((s) => s.selections)
   const openCategory = useConceptStore((s) => s.openCategory)
   const ensureSelections = useConceptStore((s) => s.ensureSelections)
   const setSelection = useConceptStore((s) => s.setSelection)
@@ -22,8 +19,8 @@ export default function ShapePage() {
 
   // Before the first-run selections are persisted, fall back to a derived
   // starting point so the board is never blank.
-  const activeSelections = Object.keys(selections).length > 0 ? selections : deriveInitialSelections(brief)
-  const concept = assembleConcept(brief, activeSelections)
+  const activeSelections = useActiveSelections()
+  const concept = useConcept()
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-12">
