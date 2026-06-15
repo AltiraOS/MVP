@@ -68,11 +68,14 @@ export interface SectionSegmentM {
   w: number
 }
 
-// A stepped cut along the spine column, jogging to the courtyard's column
-// for the band(s) where the courtyard sits (so the void reads as open) and
-// back to the spine where the stair sits (so the stair always reads as
-// connecting the levels). When a single band holds both, it's split into
-// two narrower segments so neither is lost.
+// DECISION: the brief asks for a section "along the spine column through
+// the courtyard", but the spine and courtyard sit in different columns. A
+// single straight cut can't show both, so this is a stepped cut along the
+// spine column, jogging to the courtyard's column for the band(s) where the
+// courtyard sits (so the void reads as open) and back to the spine where the
+// stair sits (so the stair always reads as connecting the levels). When a
+// single band holds both, it's split into two narrower segments so neither
+// is lost.
 export function sectionSegmentsM(concept: Concept): SectionSegmentM[] {
   const { grid, spine, stair, courtyard } = concept
   const courtyardBands = new Set((courtyard ?? []).map((c) => c.band))
