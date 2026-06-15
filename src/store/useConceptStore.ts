@@ -1,0 +1,50 @@
+import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
+import type { BriefAnswers, CardCategory, Selections } from '../model/types'
+import { DEFAULT_BRIEF, deriveInitialSelections } from '../model/brief'
+import { CATEGORY_ORDER } from '../model/cards'
+
+export interface ConceptState {
+  brief: BriefAnswers
+  selections: Selections
+  openCategory: CardCategory
+  setBriefAnswer: <K extends keyof BriefAnswers>(key: K, value: BriefAnswers[K]) => void
+  ensureSelections: () => void
+  setSelection: (category: CardCategory, cardId: string) => void
+  setOpenCategory: (category: CardCategory) => void
+  advanceCategory: () => void
+}
+
+export const useConceptStore = create<ConceptState>()(
+  persist(
+    (set, get) => ({
+      brief: DEFAULT_BRIEF,
+      selections: {},
+      openCategory: CATEGORY_ORDER[0],
+
+      setBriefAnswer: (key, value) =>
+        set((state) => ({ brief: { ...state.brief, [key]: value } })),
+
+      // Fills in a starting selection per category from the current brief,
+      // if nothing has been chosen yet. Safe to call repeatedly.
+      ensureSelections: () => {
+        const { selections, brief } = get()
+        if (Object.keys(selections).length === 0) {
+          set({ selections: deriveInitialSelections(brief) })
+        }
+      },
+
+      setSelection: (category, cardId) =>
+        set((state) => ({ selections: { ...state.selections, [category]: cardId } })),
+
+      setOpenCategory: (category) => set({ openCategory: category }),
+
+      advanceCategory: () => {
+        const { openCategory } = get()
+        const next = CATEGORY_ORDER[CATEGORY_ORDER.indexOf(openCategory) + 1]
+        if (next) set({ openCategory: next })
+      },
+    }),
+    { name: 'altira-concept-store' },
+  ),
+)

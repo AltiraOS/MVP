@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { assembleConcept } from './assemble'
 import { DEFAULT_BRIEF, deriveInitialSelections, FEELING_OPTIONS, PRIORITY_OPTIONS } from './brief'
 import { CARDS } from './cards'
-import { findBannedWords } from './copy'
+import { CATEGORY_DESCRIPTIONS, CATEGORY_LABELS, findBannedWords } from './copy'
 import { determineTier } from './routing'
 import type { BriefAnswers } from './types'
 
@@ -29,6 +29,12 @@ describe('customer-facing copy', () => {
 
   it('contains no banned words in brief option labels', () => {
     expect(findBannedWords([...FEELING_OPTIONS, ...PRIORITY_OPTIONS])).toEqual([])
+  })
+
+  it('contains no banned words in category labels and descriptions', () => {
+    expect(
+      findBannedWords([...Object.values(CATEGORY_LABELS), ...Object.values(CATEGORY_DESCRIPTIONS)]),
+    ).toEqual([])
   })
 
   it('contains no banned words in a derived concept (Core and Pro)', () => {

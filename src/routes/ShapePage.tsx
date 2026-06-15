@@ -1,10 +1,28 @@
+import { useEffect } from 'react'
 import { assembleConcept } from '../model/assemble'
-import { DEFAULT_BRIEF, deriveInitialSelections } from '../model/brief'
+import { deriveInitialSelections } from '../model/brief'
+import { CategoryPanel } from '../components/CategoryPanel'
+import { ProgressTrail } from '../components/ProgressTrail'
 import { PlanView } from '../render/PlanView'
+import { useConceptStore } from '../store/useConceptStore'
 
 export default function ShapePage() {
-  const selections = deriveInitialSelections(DEFAULT_BRIEF)
-  const concept = assembleConcept(DEFAULT_BRIEF, selections)
+  const brief = useConceptStore((s) => s.brief)
+  const selections = useConceptStore((s) => s.selections)
+  const openCategory = useConceptStore((s) => s.openCategory)
+  const ensureSelections = useConceptStore((s) => s.ensureSelections)
+  const setSelection = useConceptStore((s) => s.setSelection)
+  const setOpenCategory = useConceptStore((s) => s.setOpenCategory)
+  const advanceCategory = useConceptStore((s) => s.advanceCategory)
+
+  useEffect(() => {
+    ensureSelections()
+  }, [ensureSelections])
+
+  // Before the first-run selections are persisted, fall back to a derived
+  // starting point so the board is never blank.
+  const activeSelections = Object.keys(selections).length > 0 ? selections : deriveInitialSelections(brief)
+  const concept = assembleConcept(brief, activeSelections)
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-12">
@@ -12,8 +30,29 @@ export default function ShapePage() {
       <p className="mt-2 text-ink-soft">
         Your board is already a complete starting point. Swap any choice and watch it update.
       </p>
+
       <div className="mt-8 rounded-xl border border-line bg-panel p-4">
         <PlanView concept={concept} className="w-full" />
+      </div>
+
+      <div className="mt-8">
+        <ProgressTrail
+          selections={activeSelections}
+          openCategory={openCategory}
+          onSelectCategory={setOpenCategory}
+        />
+      </div>
+
+      <div className="mt-6">
+        <CategoryPanel
+          brief={brief}
+          selections={activeSelections}
+          category={openCategory}
+          onSelectCard={(cardId) => {
+            setSelection(openCategory, cardId)
+            advanceCategory()
+          }}
+        />
       </div>
     </div>
   )
