@@ -1,4 +1,4 @@
-import type { CardCategory } from './types'
+import type { CardCategory, LevelId } from './types'
 
 // Customer-facing names and descriptions for each choice category. Shown in
 // the progress trail and above each card tray in the Shape step.
@@ -29,6 +29,17 @@ export const CATEGORY_DESCRIPTIONS: Record<CardCategory, string> = {
   'upper-terrace': 'What sits at the top of the stairs.',
   palette: 'The colours and materials of your home.',
 }
+
+// Customer-facing names for each level, shown alongside the floor slabs in
+// the Section view.
+export const LEVEL_LABELS: Record<LevelId, string> = {
+  ground: 'Ground floor',
+  upper: 'Upper floor',
+  level1: 'Level 1',
+  level2plus: 'Upper level',
+}
+
+export const ROOF_LABEL = 'Roof'
 
 // Grade-8, calm, design-led copy is the standard for everything the
 // customer sees. These words leak internal mechanics and must never appear

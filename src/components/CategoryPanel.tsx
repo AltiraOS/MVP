@@ -17,6 +17,8 @@ export function CategoryPanel({ brief, selections, category, onSelectCard }: Cat
   const ctx = { brief, selections }
   const cards = cardsByCategory(category).filter((card) => !card.availableWhen || card.availableWhen(ctx))
   const selectedId = selections[category]
+  // The stair sits on the section cut, so show its effect in Section.
+  const view = category === 'spine-stair' ? 'section' : 'plan'
 
   return (
     <section aria-label={CATEGORY_LABELS[category]}>
@@ -31,6 +33,7 @@ export function CategoryPanel({ brief, selections, category, onSelectCard }: Cat
             card={card}
             selected={card.id === selectedId}
             onSelect={() => onSelectCard(card.id)}
+            view={view}
           />
         ))}
       </div>

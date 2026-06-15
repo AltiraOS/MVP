@@ -4,6 +4,7 @@ import { deriveInitialSelections } from '../model/brief'
 import { CategoryPanel } from '../components/CategoryPanel'
 import { ProgressTrail } from '../components/ProgressTrail'
 import { PlanView } from '../render/PlanView'
+import { SectionView } from '../render/SectionView'
 import { useConceptStore } from '../store/useConceptStore'
 
 export default function ShapePage() {
@@ -33,6 +34,10 @@ export default function ShapePage() {
 
       <div className="mt-8 rounded-xl border border-line bg-panel p-4">
         <PlanView concept={concept} className="w-full" />
+      </div>
+
+      <div className="mt-4 rounded-xl border border-line bg-panel p-4">
+        <SectionView concept={concept} className="w-full max-h-48" />
       </div>
 
       <div className="mt-8">

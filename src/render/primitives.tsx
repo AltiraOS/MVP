@@ -29,6 +29,36 @@ export function ScaleBar({ x, y }: { x: number; y: number }) {
   )
 }
 
+// A vertical scale bar in metres, for SectionView: 0, 1 and 5 m ticks
+// rising from (x, y).
+export function HeightScale({ x, y }: { x: number; y: number }) {
+  return (
+    <g transform={`translate(${x},${y})`} aria-label="Height scale: 5 metres">
+      <line x1={0} y1={0} x2={0} y2={-5} stroke={INK} strokeWidth={LINE_WEIGHT_M.hairline} />
+      {[0, 1, 5].map((m) => (
+        <line
+          key={m}
+          x1={-0.15}
+          y1={-m}
+          x2={0.15}
+          y2={-m}
+          stroke={INK}
+          strokeWidth={LINE_WEIGHT_M.hairline}
+        />
+      ))}
+      <text x={0.25} y={0.1} fontSize={FONT_SIZE_M.small} fill={INK}>
+        0
+      </text>
+      <text x={0.25} y={-1 + 0.1} fontSize={FONT_SIZE_M.small} fill={INK}>
+        1
+      </text>
+      <text x={0.25} y={-5 + 0.1} fontSize={FONT_SIZE_M.small} fill={INK}>
+        5 m
+      </text>
+    </g>
+  )
+}
+
 // North arrow, rotated by the site's north angle.
 export function NorthMark({ x, y, northDeg }: { x: number; y: number; northDeg: number }) {
   return (
