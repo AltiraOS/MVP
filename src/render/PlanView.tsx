@@ -15,7 +15,9 @@ export interface PlanViewProps {
 export function PlanView({ concept, className, highlight }: PlanViewProps) {
   const { grid, siteM, levels, spine, stair, palette, title } = concept
   const ground = levels.find((l) => l.id === 'ground')
-  const upper = levels.find((l) => l.id !== 'ground')
+  // Use the topmost level for the upper-footprint overlay so the dashed outline
+  // always reflects the highest part of the building regardless of level count.
+  const upper = levels.length > 1 ? levels[levels.length - 1] : undefined
   if (!ground) return null
 
   const bounds = gridBoundsM(grid)

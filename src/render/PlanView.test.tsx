@@ -59,4 +59,24 @@ describe('PlanView', () => {
       expect(fontSize).toBeLessThanOrEqual(0.34)
     }
   })
+
+  it('renders a 3-level concept without crash and uses the topmost footprint for the dashed overlay', () => {
+    const base = assembleConcept(brief, deriveInitialSelections(brief))
+    const topLevel = base.levels[base.levels.length - 1]
+    const concept = {
+      ...base,
+      levels: [
+        base.levels[0],
+        topLevel,
+        { ...topLevel, id: 'level2plus' as const, baseElevationM: 6.2, floorToFloorM: 2.8 },
+      ],
+    }
+    render(<PlanView concept={concept} />)
+    const svg = screen.getByRole('img', { name: /floor plan/i })
+    expect(svg.tagName.toLowerCase()).toBe('svg')
+    // Stair still renders on the spine
+    expect(document.querySelector('[aria-label="Stair"]')).not.toBeNull()
+    // Dashed upper-outline elements exist (the overlay between ground and level2plus)
+    expect(document.querySelector('[aria-label="Upper level outline"]')).not.toBeNull()
+  })
 })

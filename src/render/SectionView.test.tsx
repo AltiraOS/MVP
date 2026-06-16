@@ -67,4 +67,33 @@ describe('SectionView', () => {
     expect(document.querySelector('[aria-label^="Height scale"]')).not.toBeNull()
     expect(document.querySelector('[aria-label^="Scale:"]')).not.toBeNull()
   })
+
+  it('renders a 3-level concept: stair reaches the topmost slab, all slabs drawn', () => {
+    const base = assembleConcept(brief, deriveInitialSelections(brief))
+    const topLevel = base.levels[base.levels.length - 1]
+    const concept = {
+      ...base,
+      levels: [
+        base.levels[0],
+        topLevel,
+        { ...topLevel, id: 'level2plus' as const, baseElevationM: 6.2, floorToFloorM: 2.8 },
+      ],
+    }
+    render(<SectionView concept={concept} />)
+
+    const svg = screen.getByRole('img', { name: /section through/i })
+    expect(svg.tagName.toLowerCase()).toBe('svg')
+
+    // Stair is still present
+    expect(document.querySelector('[aria-label="Stair"]')).not.toBeNull()
+
+    // With 3 levels the stair should rise to the last slab (6.2m), not just slabZs[0]
+    const { slabZs, roofTopM } = sectionHeightsM(concept)
+    expect(slabZs.length).toBe(2)
+    const stairPolyline = document.querySelector('[aria-label="Stair"] polyline')
+    const points = stairPolyline?.getAttribute('points')?.trim().split(/\s+/) ?? []
+    const ys = points.map((p) => Number(p.split(',')[1]))
+    // Highest point of stair (lowest y in SVG) should be at the second slab, not the first
+    expect(Math.min(...ys)).toBeCloseTo(roofTopM - slabZs[1], 5)
+  })
 })

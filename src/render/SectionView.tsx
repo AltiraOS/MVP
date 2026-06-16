@@ -39,7 +39,7 @@ export function SectionView({ concept, className, highlight }: SectionViewProps)
   const stairSeg = segments.find(
     (seg) => seg.addr.col === spine.col && seg.addr.band === stair.band,
   )
-  const stairRiseM = slabZs[0] ?? roofTopM
+  const stairRiseM = slabZs[slabZs.length - 1] ?? roofTopM
   const stairPoints: string[] = []
   if (stairSeg) {
     let z = 0
