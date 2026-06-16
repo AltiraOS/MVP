@@ -95,4 +95,24 @@ describe('App routing', () => {
     render(<App />)
     expect(screen.getByRole('heading', { name: /ready when you are/i })).toBeInTheDocument()
   })
+
+  it('prompts for the real site before showing a dimensioned plan, then re-solves onto it', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    const nav = screen.getByRole('navigation', { name: /journey progress/i })
+    await user.click(within(nav).getByRole('link', { name: /activate/i }))
+    await user.click(screen.getByRole('button', { name: /activate this concept/i }))
+
+    const projectNav = screen.getByRole('navigation', { name: /project room navigation/i })
+    await user.click(within(projectNav).getByRole('link', { name: /dimensioned plan/i }))
+
+    // No site captured yet: prompted for one, not shown a dimensioned plan.
+    expect(screen.getByRole('button', { name: /re-solve onto my site/i })).toBeInTheDocument()
+    expect(screen.queryByRole('img', { name: /floor plan/i })).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /re-solve onto my site/i }))
+
+    expect(screen.getByRole('img', { name: /floor plan/i })).toBeInTheDocument()
+    expect(useConceptStore.getState().projectRoom?.resolved).toBeDefined()
+  })
 })

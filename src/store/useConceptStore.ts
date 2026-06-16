@@ -4,7 +4,8 @@ import type { BriefAnswers, CardCategory, Concept, Selections } from '../model/t
 import { assembleConcept } from '../model/assemble'
 import { DEFAULT_BRIEF, deriveInitialSelections } from '../model/brief'
 import { CATEGORY_ORDER } from '../model/cards'
-import type { ProjectRoom } from '../model/project'
+import type { ProjectRoom, SiteCapture } from '../model/project'
+import { resolveOnSite } from '../model/project'
 
 export type AppMode = 'journey' | 'project'
 
@@ -21,6 +22,7 @@ export interface ConceptState {
   advanceCategory: () => void
   switchArchetype: (cardId: string) => void
   activate: () => void
+  captureSite: (site: SiteCapture) => void
 }
 
 export const useConceptStore = create<ConceptState>()(
@@ -71,10 +73,22 @@ export const useConceptStore = create<ConceptState>()(
         const activeSelections =
           Object.keys(selections).length > 0 ? selections : deriveInitialSelections(brief)
         const baseline = assembleConcept(brief, activeSelections)
+        const site = projectRoom?.site
+        const resolved = site ? resolveOnSite(baseline, site) : undefined
         set({
           mode: 'project',
-          projectRoom: { baseline, site: projectRoom?.site, revisions: [] },
+          projectRoom: { baseline, site, resolved, revisions: [] },
         })
+      },
+
+      // Real site in -> bay grid re-resolves in metres -> the same renderers
+      // fire (brief §3). Never throws; mismatches surface as trade-off copy
+      // already folded into the resolved concept by resolveOnSite.
+      captureSite: (site) => {
+        const { projectRoom } = get()
+        if (!projectRoom) return
+        const resolved = resolveOnSite(projectRoom.baseline, site)
+        set({ projectRoom: { ...projectRoom, site, resolved } })
       },
     }),
     { name: 'altira-concept-store' },
