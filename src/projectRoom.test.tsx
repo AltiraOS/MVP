@@ -7,6 +7,7 @@ import { CARDS } from './model/cards'
 import { PARTIS } from './model/partis'
 import { resolveOnSite } from './model/project'
 import type { SiteCapture } from './model/project'
+import { deriveSchedules } from './model/schedules'
 import type { CardDef, Selections } from './model/types'
 import { validate } from './model/validate'
 import { PlanView } from './render/PlanView'
@@ -86,6 +87,24 @@ for (const [partiId] of Object.entries(PARTIS)) {
       if (resolved.courtyard?.length) {
         expect(within(plan).getAllByText('Courtyard').length).toBeGreaterThan(0)
         expect(section.querySelector('[aria-label="Open to sky"]')).not.toBeNull()
+      }
+    })
+
+    it('derives schedules that match the model, with areas labelled indicative', () => {
+      const baseline = assembleConcept(brief, selections)
+      const resolved = resolveOnSite(baseline, REAL_SITE)
+      const schedules = deriveSchedules(resolved)
+
+      const totalAssignments = resolved.levels.reduce(
+        (sum, level) => sum + Object.keys(level.assignments).length,
+        0,
+      )
+      expect(schedules.rooms.length + schedules.outdoor.length).toBe(totalAssignments)
+      expect(schedules.assumptions.length).toBeGreaterThan(0)
+      expect(findBannedWords(schedules.assumptions)).toEqual([])
+
+      if (resolved.courtyard?.length) {
+        expect(schedules.outdoor.some((r) => r.kind === 'open')).toBe(true)
       }
     })
   })

@@ -115,4 +115,26 @@ describe('App routing', () => {
     expect(screen.getByRole('img', { name: /floor plan/i })).toBeInTheDocument()
     expect(useConceptStore.getState().projectRoom?.resolved).toBeDefined()
   })
+
+  it('shows room, area and outdoor schedules with an assumptions list once the site is captured', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    const nav = screen.getByRole('navigation', { name: /journey progress/i })
+    await user.click(within(nav).getByRole('link', { name: /activate/i }))
+    await user.click(screen.getByRole('button', { name: /activate this concept/i }))
+
+    const projectNav = screen.getByRole('navigation', { name: /project room navigation/i })
+    await user.click(within(projectNav).getByRole('link', { name: /schedules/i }))
+
+    // No site captured yet: prompted for one, not shown schedules.
+    expect(screen.getByRole('button', { name: /re-solve onto my site/i })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: /room schedule/i })).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /re-solve onto my site/i }))
+
+    expect(screen.getByRole('heading', { name: /^room schedule$/i })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /^area schedule$/i })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /courtyard.*outdoor-room schedule/i })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /assumptions.*unresolved questions/i })).toBeInTheDocument()
+  })
 })
