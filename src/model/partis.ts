@@ -550,6 +550,128 @@ export const liveWorkParti: Parti = {
   ],
 }
 
+// The mixed-use-lowrise parti: a four-bay-wide, three-level shop-top building.
+// A commercial ground floor (4.2 m, room for a proper shopfit) is accessed from
+// the street; a shared stair behind the spine delivers two self-contained
+// residential flats on floors 2 and 3.
+//
+//            col0 (retail)   col1 (spine)   col2 (retail)   col3 (retail)
+// band0      retail front    lobby          retail front    display/reception
+// band1      prep / back     hall           storage         outdoor seating
+// band2      services        hall/stair     rear service    rear terrace
+//
+// Upper (Flat 1, floor 2) and Level2plus (Flat 2, floor 3) share the same
+// footprint: living / kitchen / bedroom(s) fill cols 0, 2, 3.
+export const mixedUseLowriseParti: Parti = {
+  id: 'mixed-use-lowrise',
+  bayCount: 4,
+  bandCount: 3,
+  bandRatios: [0.30, 0.38, 0.32],
+  spineCol: 1,
+  groundFloorToFloorM: 4.2,
+  groundBaseElevationM: 0,
+  fixed: [
+    { addr: { col: 1, band: 0 }, fill: { kind: 'circulation', label: 'Lobby' } },
+    { addr: { col: 1, band: 1 }, fill: { kind: 'circulation', label: 'Hall' } },
+    { addr: { col: 1, band: 2 }, fill: { kind: 'circulation', label: 'Hall' } },
+    { addr: { col: 0, band: 2 }, fill: { kind: 'service', label: 'Services' } },
+  ],
+  openCandidates: [],
+  slots: [
+    {
+      category: 'indoor-living',
+      targets: [
+        { col: 0, band: 0 },
+        { col: 2, band: 0 },
+        { col: 3, band: 0 },
+        { col: 0, band: 1 },
+        { col: 2, band: 1 },
+      ],
+    },
+    { category: 'outdoor-rooms', targets: [{ col: 3, band: 1 }] },
+    {
+      category: 'rear-terrace',
+      targets: [
+        { col: 2, band: 2 },
+        { col: 3, band: 2 },
+      ],
+    },
+    { category: 'spine-stair', targets: [{ col: 1, band: 1 }, { col: 1, band: 2 }] },
+  ],
+  levels: [
+    // Flat 1 — floor 2
+    {
+      id: 'upper',
+      floorToFloorM: 3.0,
+      baseElevationM: 4.2,
+      fixed: [
+        { addr: { col: 1, band: 0 }, fill: { kind: 'circulation', label: 'Landing' } },
+        { addr: { col: 1, band: 1 }, fill: { kind: 'circulation', label: 'Hall' } },
+        { addr: { col: 1, band: 2 }, fill: { kind: 'circulation', label: 'Hall' } },
+      ],
+      slots: [
+        {
+          category: 'sleeping',
+          targets: [
+            { col: 0, band: 0 },
+            { col: 2, band: 0 },
+            { col: 3, band: 0 },
+            { col: 0, band: 1 },
+          ],
+        },
+        {
+          category: 'upper-terrace',
+          targets: [
+            { col: 3, band: 1 },
+            { col: 3, band: 2 },
+          ],
+        },
+        { category: 'spine-stair', targets: [{ col: 1, band: 1 }, { col: 1, band: 2 }] },
+      ],
+      unbuilt: [
+        { col: 2, band: 1 },
+        { col: 0, band: 2 },
+        { col: 2, band: 2 },
+      ],
+    },
+    // Flat 2 — floor 3
+    {
+      id: 'level2plus',
+      floorToFloorM: 2.8,
+      baseElevationM: 7.2,
+      fixed: [
+        { addr: { col: 1, band: 0 }, fill: { kind: 'circulation', label: 'Landing' } },
+        { addr: { col: 1, band: 1 }, fill: { kind: 'circulation', label: 'Hall' } },
+        { addr: { col: 1, band: 2 }, fill: { kind: 'circulation', label: 'Hall' } },
+      ],
+      slots: [
+        {
+          category: 'sleeping',
+          targets: [
+            { col: 0, band: 0 },
+            { col: 2, band: 0 },
+            { col: 3, band: 0 },
+            { col: 0, band: 1 },
+          ],
+        },
+        {
+          category: 'upper-terrace',
+          targets: [
+            { col: 3, band: 1 },
+            { col: 3, band: 2 },
+          ],
+        },
+        { category: 'spine-stair', targets: [{ col: 1, band: 1 }, { col: 1, band: 2 }] },
+      ],
+      unbuilt: [
+        { col: 2, band: 1 },
+        { col: 0, band: 2 },
+        { col: 2, band: 2 },
+      ],
+    },
+  ],
+}
+
 export const PARTIS: Record<string, Parti> = {
   'family-courtyard': familyCourtyardParti,
   'dual-key': dualKeyParti,
@@ -557,4 +679,5 @@ export const PARTIS: Record<string, Parti> = {
   'narrow-lot': narrowLotParti,
   'corner-residential': cornerResidentialParti,
   'live-work': liveWorkParti,
+  'mixed-use-lowrise': mixedUseLowriseParti,
 }
