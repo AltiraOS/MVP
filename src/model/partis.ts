@@ -672,6 +672,146 @@ export const mixedUseLowriseParti: Parti = {
   ],
 }
 
+// The stacked-roles parti: a four-bay-wide, three-storey skeleton for two
+// genuinely separate households on distinct floors. The entire ground floor
+// is a self-contained accessible home (e.g. older parents) — NOT a suite
+// carved off a shared plan. The two upper levels form a complete family
+// home: a day zone on the middle floor, sleeping zone at the top.
+//
+// Distinct from:
+//   intergenerational — one bay carved off a shared ground floor
+//   live-work         — one owner's studio + their own home
+//   mixed-use-lowrise — commercial tenancy + separate flats; not family
+//   dual-key          — two-level split; neither party gets a complete floor
+//
+//            col0               col1 (spine)   col2              col3
+// ground:
+// band0      garden entry       shared entry   bedroom (parents) ensuite (parents)
+// band1      living (parents)   hall           kitchen (parents) dining (parents)
+// band2      utility            hall/stair     rear garden       rear terrace
+//
+// upper (family day zone):
+// band0      kitchen (family)   landing        living (family)   dining (family)
+// band1      family room        hall           [unbuilt]         terrace
+// band2      [unbuilt]          hall           [unbuilt]         terrace
+//
+// level2plus (family sleep zone):
+// band0      main bedroom       landing        bedroom 2         bathroom
+// band1      bedroom 3          hall           [unbuilt]         roof terrace
+// band2      [unbuilt]          hall           [unbuilt]         roof terrace
+export const stackedRolesParti: Parti = {
+  id: 'stacked-roles',
+  bayCount: 4,
+  bandCount: 3,
+  bandRatios: [0.30, 0.40, 0.30],
+  spineCol: 1,
+  groundFloorToFloorM: 3.2,
+  groundBaseElevationM: 0,
+  fixed: [
+    { addr: { col: 1, band: 0 }, fill: { kind: 'circulation', label: 'Shared Entry' } },
+    { addr: { col: 1, band: 1 }, fill: { kind: 'circulation', label: 'Hall' } },
+    { addr: { col: 1, band: 2 }, fill: { kind: 'circulation', label: 'Hall' } },
+    { addr: { col: 0, band: 2 }, fill: { kind: 'service', label: 'Utility' } },
+  ],
+  openCandidates: [],
+  slots: [
+    {
+      category: 'indoor-living',
+      targets: [
+        { col: 2, band: 0 },
+        { col: 3, band: 0 },
+        { col: 0, band: 1 },
+        { col: 2, band: 1 },
+        { col: 3, band: 1 },
+      ],
+    },
+    { category: 'forecourt', targets: [{ col: 0, band: 0 }] },
+    {
+      category: 'rear-terrace',
+      targets: [
+        { col: 2, band: 2 },
+        { col: 3, band: 2 },
+      ],
+    },
+    { category: 'spine-stair', targets: [{ col: 1, band: 1 }, { col: 1, band: 2 }] },
+    // No outdoor-rooms slot: (3,1) is the parents' dining room filled by
+    // indoor-living. A no-op outdoor-rooms card prevents generic cards from
+    // overwriting that cell at assembler step 7.
+  ],
+  levels: [
+    // Family day zone — kitchen, living, dining, family room
+    {
+      id: 'upper',
+      floorToFloorM: 3.0,
+      baseElevationM: 3.2,
+      fixed: [
+        { addr: { col: 1, band: 0 }, fill: { kind: 'circulation', label: 'Landing' } },
+        { addr: { col: 1, band: 1 }, fill: { kind: 'circulation', label: 'Hall' } },
+        { addr: { col: 1, band: 2 }, fill: { kind: 'circulation', label: 'Hall' } },
+      ],
+      slots: [
+        {
+          category: 'sleeping',
+          targets: [
+            { col: 0, band: 0 },
+            { col: 2, band: 0 },
+            { col: 3, band: 0 },
+            { col: 0, band: 1 },
+          ],
+        },
+        {
+          category: 'upper-terrace',
+          targets: [
+            { col: 3, band: 1 },
+            { col: 3, band: 2 },
+          ],
+        },
+        { category: 'spine-stair', targets: [{ col: 1, band: 1 }, { col: 1, band: 2 }] },
+      ],
+      unbuilt: [
+        { col: 2, band: 1 },
+        { col: 0, band: 2 },
+        { col: 2, band: 2 },
+      ],
+    },
+    // Family sleep zone — bedrooms, bathroom, roof terrace
+    {
+      id: 'level2plus',
+      floorToFloorM: 2.8,
+      baseElevationM: 6.2,
+      fixed: [
+        { addr: { col: 1, band: 0 }, fill: { kind: 'circulation', label: 'Landing' } },
+        { addr: { col: 1, band: 1 }, fill: { kind: 'circulation', label: 'Hall' } },
+        { addr: { col: 1, band: 2 }, fill: { kind: 'circulation', label: 'Hall' } },
+      ],
+      slots: [
+        {
+          category: 'sleeping',
+          targets: [
+            { col: 0, band: 0 },
+            { col: 2, band: 0 },
+            { col: 3, band: 0 },
+            { col: 0, band: 1 },
+          ],
+        },
+        {
+          category: 'upper-terrace',
+          targets: [
+            { col: 3, band: 1 },
+            { col: 3, band: 2 },
+          ],
+        },
+        { category: 'spine-stair', targets: [{ col: 1, band: 1 }, { col: 1, band: 2 }] },
+      ],
+      unbuilt: [
+        { col: 2, band: 1 },
+        { col: 0, band: 2 },
+        { col: 2, band: 2 },
+      ],
+    },
+  ],
+}
+
 export const PARTIS: Record<string, Parti> = {
   'family-courtyard': familyCourtyardParti,
   'dual-key': dualKeyParti,
@@ -680,4 +820,5 @@ export const PARTIS: Record<string, Parti> = {
   'corner-residential': cornerResidentialParti,
   'live-work': liveWorkParti,
   'mixed-use-lowrise': mixedUseLowriseParti,
+  'stacked-roles': stackedRolesParti,
 }
