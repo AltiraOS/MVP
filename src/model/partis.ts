@@ -339,9 +339,95 @@ export const narrowLotParti: Parti = {
   ],
 }
 
+// The corner-residential parti: a 4-bay-wide, 3-band-deep skeleton for a
+// block with two public frontages (front street + side street at col 3).
+// The spine shifts to col 2, placing the stair behind the corner forecourt.
+// No courtyard is needed — cross-light arrives from both street directions.
+//
+//            col0 (private)  col1          col2 (spine)    col3 (side-street)
+// band0      living          living        corner entry    corner forecourt
+// band1      kitchen         dining        hall            outdoor room
+// band2      inner garden    inner garden  hall/stair      utility
+//
+// Upper: cols 0-1 band 2 are unbuilt (lower eave over inner garden).
+// Upper-terrace reads toward the side street at (3,1)/(3,2).
+export const cornerResidentialParti: Parti = {
+  id: 'corner-residential',
+  bayCount: 4,
+  bandCount: 3,
+  bandRatios: [0.30, 0.38, 0.32],
+  spineCol: 2,
+  groundFloorToFloorM: 3.2,
+  groundBaseElevationM: 0,
+  fixed: [
+    { addr: { col: 2, band: 0 }, fill: { kind: 'circulation', label: 'Corner Entry' } },
+    { addr: { col: 2, band: 1 }, fill: { kind: 'circulation', label: 'Hall' } },
+    { addr: { col: 2, band: 2 }, fill: { kind: 'circulation', label: 'Hall' } },
+    { addr: { col: 3, band: 2 }, fill: { kind: 'service', label: 'Utility' } },
+  ],
+  openCandidates: [],
+  slots: [
+    {
+      category: 'indoor-living',
+      targets: [
+        { col: 0, band: 0 },
+        { col: 1, band: 0 },
+        { col: 0, band: 1 },
+        { col: 1, band: 1 },
+      ],
+    },
+    { category: 'forecourt', targets: [{ col: 3, band: 0 }] },
+    {
+      category: 'rear-terrace',
+      targets: [
+        { col: 0, band: 2 },
+        { col: 1, band: 2 },
+      ],
+    },
+    { category: 'spine-stair', targets: [{ col: 2, band: 1 }, { col: 2, band: 2 }] },
+    { category: 'outdoor-rooms', targets: [{ col: 3, band: 1 }] },
+  ],
+  levels: [
+    {
+      id: 'upper',
+      floorToFloorM: 3.0,
+      baseElevationM: 3.2,
+      fixed: [
+        { addr: { col: 2, band: 0 }, fill: { kind: 'circulation', label: 'Landing' } },
+        { addr: { col: 2, band: 1 }, fill: { kind: 'circulation', label: 'Hall' } },
+        { addr: { col: 2, band: 2 }, fill: { kind: 'circulation', label: 'Hall' } },
+      ],
+      slots: [
+        {
+          category: 'sleeping',
+          targets: [
+            { col: 0, band: 0 },
+            { col: 1, band: 0 },
+            { col: 3, band: 0 },
+            { col: 0, band: 1 },
+          ],
+        },
+        {
+          category: 'upper-terrace',
+          targets: [
+            { col: 3, band: 1 },
+            { col: 3, band: 2 },
+          ],
+        },
+        { category: 'spine-stair', targets: [{ col: 2, band: 1 }, { col: 2, band: 2 }] },
+      ],
+      unbuilt: [
+        { col: 0, band: 2 },
+        { col: 1, band: 2 },
+      ],
+    },
+  ],
+}
+
 export const PARTIS: Record<string, Parti> = {
   'family-courtyard': familyCourtyardParti,
   'dual-key': dualKeyParti,
   'intergenerational': intergenerationalParti,
   'narrow-lot': narrowLotParti,
+  'corner-residential': cornerResidentialParti,
 }
