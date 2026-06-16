@@ -170,6 +170,7 @@ export const dualKeyParti: Parti = {
       ],
       unbuilt: [
         { col: 0, band: 2 },
+        { col: 2, band: 1 },
         { col: 2, band: 2 },
       ],
     },
@@ -184,8 +185,7 @@ export const dualKeyParti: Parti = {
 //
 //            col0               col1 (spine)    col2           col3
 // band0      forecourt          shared entry    living         dining / kitchen
-// band1      secondary bedroom  hall            [courtyard     family / dining
-//                                               candidate]
+// band1      secondary bedroom  hall            dining         family / dining
 // band2      utility            hall/stair      rear garden    rear terrace
 //
 // Upper (main family only):
@@ -259,6 +259,7 @@ export const intergenerationalParti: Parti = {
       ],
       unbuilt: [
         { col: 0, band: 2 },
+        { col: 2, band: 1 },
         { col: 2, band: 2 },
       ],
     },
@@ -418,6 +419,7 @@ export const cornerResidentialParti: Parti = {
       ],
       unbuilt: [
         { col: 0, band: 2 },
+        { col: 1, band: 1 },
         { col: 1, band: 2 },
       ],
     },
