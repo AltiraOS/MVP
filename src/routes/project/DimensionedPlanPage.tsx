@@ -39,7 +39,7 @@ export default function DimensionedPlanPage() {
       )}
 
       <div className="mt-6 rounded-xl border border-line bg-panel p-4">
-        <PlanView concept={projectRoom.resolved} className="w-full" />
+        <PlanView concept={projectRoom.resolved} className="w-full" dimensioned />
       </div>
     </div>
   )

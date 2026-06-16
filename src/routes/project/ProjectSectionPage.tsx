@@ -28,7 +28,7 @@ export default function ProjectSectionPage() {
       <p className="mt-2 text-ink-soft">Your concept's section, re-solved onto your real site.</p>
 
       <div className="mt-6 rounded-xl border border-line bg-panel p-4">
-        <SectionView concept={projectRoom.resolved} className="w-full" />
+        <SectionView concept={projectRoom.resolved} className="w-full" dimensioned />
       </div>
     </div>
   )

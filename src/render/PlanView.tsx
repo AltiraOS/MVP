@@ -1,7 +1,7 @@
 import type { CellAddr, Concept } from '../model/types'
-import { cellKey } from '../model/grid'
+import { bandOffsetM, cellKey } from '../model/grid'
 import { cellRectM, fitFontSizeM, gridBoundsM } from './geometry'
-import { NorthMark, ScaleBar, SharedDefs, StreetMark } from './primitives'
+import { DimensionLine, NorthMark, ScaleBar, SharedDefs, StreetMark } from './primitives'
 import { FONT_SIZE_M, INK, INK_SOFT, LINE_WEIGHT_M, MARGIN_M } from './tokens'
 
 export interface PlanViewProps {
@@ -10,9 +10,13 @@ export interface PlanViewProps {
   /** When set, only this cell's label/fill is drawn at full strength and the
    * rest of the board is dimmed — used for card thumbnails. */
   highlight?: CellAddr[]
+  /** Adds dimension strings (overall, per-column width, per-row depth) over
+   * the same geometry — never changes placement. Only meaningful once the
+   * concept has been resolved onto the customer's real site (brief §3). */
+  dimensioned?: boolean
 }
 
-export function PlanView({ concept, className, highlight }: PlanViewProps) {
+export function PlanView({ concept, className, highlight, dimensioned }: PlanViewProps) {
   const { grid, siteM, levels, spine, stair, palette, title } = concept
   const ground = levels.find((l) => l.id === 'ground')
   // Use the topmost level for the upper-footprint overlay so the dashed outline
@@ -165,6 +169,39 @@ export function PlanView({ concept, className, highlight }: PlanViewProps) {
           aria-label="Upper level outline"
         />
       ))}
+
+      {/* dimension strings: overall frontage, per-column width, per-row depth */}
+      {dimensioned && (
+        <g aria-label="Dimensions">
+          <DimensionLine
+            x1={bounds.x}
+            y1={bounds.y - 0.7}
+            x2={bounds.x + bounds.w}
+            y2={bounds.y - 0.7}
+            label={`${bounds.w.toFixed(2)} m overall`}
+          />
+          {Array.from({ length: grid.bayCount }).map((_, col) => (
+            <DimensionLine
+              key={col}
+              x1={bounds.x + col * grid.bayWidthM}
+              y1={bounds.y - 0.35}
+              x2={bounds.x + (col + 1) * grid.bayWidthM}
+              y2={bounds.y - 0.35}
+              label={`${grid.bayWidthM.toFixed(2)} m`}
+            />
+          ))}
+          {grid.bandDepthsM.map((depthM, band) => (
+            <DimensionLine
+              key={band}
+              x1={bounds.x - 0.5}
+              y1={grid.originM.y + bandOffsetM(grid, band)}
+              x2={bounds.x - 0.5}
+              y2={grid.originM.y + bandOffsetM(grid, band + 1)}
+              label={`${depthM.toFixed(2)} m`}
+            />
+          ))}
+        </g>
+      )}
 
       {/* north mark */}
       <NorthMark x={siteM.frontageM + MARGIN_M * 0.55} y={0.6} northDeg={siteM.northDeg} />

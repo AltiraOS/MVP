@@ -95,6 +95,65 @@ export function StreetMark({ x, y, widthM }: { x: number; y: number; widthM: num
   )
 }
 
+// A dimension string between two points: an extension line with end ticks
+// and a centred label. Purely additive over geometry already computed
+// elsewhere (gridBoundsM, grid.bayWidthM, bandDepthsM, slab heights) —
+// it never works out a position itself.
+export function DimensionLine({
+  x1,
+  y1,
+  x2,
+  y2,
+  label,
+}: {
+  x1: number
+  y1: number
+  x2: number
+  y2: number
+  label: string
+}) {
+  const dx = x2 - x1
+  const dy = y2 - y1
+  const len = Math.hypot(dx, dy) || 1
+  const tickLen = 0.12
+  const px = (-dy / len) * tickLen
+  const py = (dx / len) * tickLen
+  const midX = (x1 + x2) / 2
+  const midY = (y1 + y2) / 2
+  const isHorizontal = Math.abs(dy) <= Math.abs(dx)
+
+  return (
+    <g aria-label={`Dimension: ${label}`}>
+      <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={INK_SOFT} strokeWidth={LINE_WEIGHT_M.hairline} />
+      <line
+        x1={x1 - px}
+        y1={y1 - py}
+        x2={x1 + px}
+        y2={y1 + py}
+        stroke={INK_SOFT}
+        strokeWidth={LINE_WEIGHT_M.hairline}
+      />
+      <line
+        x1={x2 - px}
+        y1={y2 - py}
+        x2={x2 + px}
+        y2={y2 + py}
+        stroke={INK_SOFT}
+        strokeWidth={LINE_WEIGHT_M.hairline}
+      />
+      <text
+        x={midX + (isHorizontal ? 0 : 0.12)}
+        y={midY - (isHorizontal ? 0.08 : 0)}
+        textAnchor="middle"
+        fontSize={FONT_SIZE_M.small}
+        fill={INK_SOFT}
+      >
+        {label}
+      </text>
+    </g>
+  )
+}
+
 // Shared <defs> for marker arrowheads. Render once per SVG.
 export function SharedDefs() {
   return (

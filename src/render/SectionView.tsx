@@ -2,7 +2,7 @@ import type { CellAddr, Concept } from '../model/types'
 import { cellKey } from '../model/grid'
 import { LEVEL_LABELS, ROOF_LABEL } from '../model/copy'
 import { isFullyVoidCell, sectionHeightsM, sectionSegmentsM, sectionWidthM } from './geometry'
-import { HeightScale, ScaleBar, SharedDefs } from './primitives'
+import { DimensionLine, HeightScale, ScaleBar, SharedDefs } from './primitives'
 import { FONT_SIZE_M, INK, INK_SOFT, LINE_WEIGHT_M, MARGIN_M } from './tokens'
 
 const TOP_MARGIN_M = 1
@@ -15,6 +15,11 @@ export interface SectionViewProps {
   /** When set, only these cells' segments are drawn at full strength and the
    * rest of the section is dimmed — used for card thumbnails. */
   highlight?: CellAddr[]
+  /** Adds dimension strings (overall height, floor-to-floor heights, overall
+   * depth) over the same geometry — never changes placement. Only
+   * meaningful once the concept has been resolved onto the customer's real
+   * site (brief §3). */
+  dimensioned?: boolean
 }
 
 // A cut along the spine column, jogging to the courtyard's column for the
@@ -22,17 +27,18 @@ export interface SectionViewProps {
 // sits. Shows floor slabs at their real elevations, the courtyard as open
 // air through the full height of the building, and the stair connecting
 // the levels.
-export function SectionView({ concept, className, highlight }: SectionViewProps) {
+export function SectionView({ concept, className, highlight, dimensioned }: SectionViewProps) {
   const { levels, spine, stair, palette, title } = concept
   const widthM = sectionWidthM(concept.grid)
   const { slabZs, roofTopM } = sectionHeightsM(concept)
   const segments = sectionSegmentsM(concept)
   const highlightKeys = highlight ? new Set(highlight.map(cellKey)) : null
 
+  const groundMarginM = dimensioned ? GROUND_MARGIN_M + 0.6 : GROUND_MARGIN_M
   const viewMinX = -MARGIN_M
   const viewMinY = -TOP_MARGIN_M
-  const viewW = widthM + MARGIN_M * 2
-  const viewH = roofTopM + TOP_MARGIN_M + GROUND_MARGIN_M
+  const viewW = widthM + MARGIN_M * 2 + (dimensioned ? 1.5 : 0)
+  const viewH = roofTopM + TOP_MARGIN_M + groundMarginM
 
   const yFor = (z: number) => roofTopM - z
 
@@ -159,7 +165,37 @@ export function SectionView({ concept, className, highlight }: SectionViewProps)
       <HeightScale x={viewMinX + MARGIN_M * 0.4} y={yFor(0)} />
 
       {/* depth scale */}
-      <ScaleBar x={0} y={yFor(0) + GROUND_MARGIN_M * 0.6} />
+      <ScaleBar x={0} y={yFor(0) + groundMarginM * 0.6} />
+
+      {/* dimension strings: overall height, per-level floor-to-floor height, overall depth */}
+      {dimensioned && (
+        <g aria-label="Dimensions">
+          <DimensionLine
+            x1={widthM + 1.1}
+            y1={yFor(0)}
+            x2={widthM + 1.1}
+            y2={yFor(roofTopM)}
+            label={`${roofTopM.toFixed(2)} m overall`}
+          />
+          {levels.map((level) => (
+            <DimensionLine
+              key={level.id}
+              x1={widthM + 0.6}
+              y1={yFor(level.baseElevationM)}
+              x2={widthM + 0.6}
+              y2={yFor(level.baseElevationM + level.floorToFloorM)}
+              label={`${level.floorToFloorM.toFixed(2)} m`}
+            />
+          ))}
+          <DimensionLine
+            x1={0}
+            y1={yFor(0) + groundMarginM * 0.3}
+            x2={widthM}
+            y2={yFor(0) + groundMarginM * 0.3}
+            label={`${widthM.toFixed(2)} m overall`}
+          />
+        </g>
+      )}
     </svg>
   )
 }

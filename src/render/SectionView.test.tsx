@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { assembleConcept } from '../model/assemble'
 import { DEFAULT_BRIEF, deriveInitialSelections } from '../model/brief'
+import { resolveOnSite } from '../model/project'
 import { sectionHeightsM } from './geometry'
 import { SectionView } from './SectionView'
 
@@ -95,5 +96,33 @@ describe('SectionView', () => {
     const ys = points.map((p) => Number(p.split(',')[1]))
     // Highest point of stair (lowest y in SVG) should be at the second slab, not the first
     expect(Math.min(...ys)).toBeCloseTo(roofTopM - slabZs[1], 5)
+  })
+
+  it('omits dimension strings by default', () => {
+    const concept = assembleConcept(brief, deriveInitialSelections(brief))
+    render(<SectionView concept={concept} />)
+    expect(document.querySelector('[aria-label="Dimensions"]')).toBeNull()
+  })
+
+  it('adds dimension strings over the resolved concept without changing the geometry', () => {
+    const baseline = assembleConcept(brief, deriveInitialSelections(brief))
+    const resolved = resolveOnSite(baseline, {
+      frontageM: 18,
+      depthM: 32,
+      orientationDeg: 0,
+      setbacks: { front: 4.5, rear: 3, side: 1.5 },
+      cornerLot: false,
+    })
+    render(<SectionView concept={resolved} dimensioned />)
+
+    const dimensions = document.querySelector('[aria-label="Dimensions"]')
+    expect(dimensions).not.toBeNull()
+
+    // One overall height, one per level, one overall depth.
+    const dimensionLines = dimensions?.querySelectorAll('[aria-label^="Dimension:"]') ?? []
+    expect(dimensionLines.length).toBe(2 + resolved.levels.length)
+
+    // The courtyard still reads as open with dimensions on.
+    expect(document.querySelector('[aria-label="Open to sky"]')).not.toBeNull()
   })
 })

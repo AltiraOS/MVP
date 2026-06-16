@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { assembleConcept } from '../model/assemble'
 import { DEFAULT_BRIEF, deriveInitialSelections } from '../model/brief'
+import { resolveOnSite } from '../model/project'
 import { PlanView } from './PlanView'
 
 const brief = { ...DEFAULT_BRIEF, householdName: 'Sample House' }
@@ -78,5 +79,34 @@ describe('PlanView', () => {
     expect(document.querySelector('[aria-label="Stair"]')).not.toBeNull()
     // Dashed upper-outline elements exist (the overlay between ground and level2plus)
     expect(document.querySelector('[aria-label="Upper level outline"]')).not.toBeNull()
+  })
+
+  it('omits dimension strings by default', () => {
+    const concept = assembleConcept(brief, deriveInitialSelections(brief))
+    render(<PlanView concept={concept} />)
+    expect(document.querySelector('[aria-label="Dimensions"]')).toBeNull()
+  })
+
+  it('adds dimension strings over the resolved concept without changing the geometry', () => {
+    const baseline = assembleConcept(brief, deriveInitialSelections(brief))
+    const resolved = resolveOnSite(baseline, {
+      frontageM: 18,
+      depthM: 32,
+      orientationDeg: 0,
+      setbacks: { front: 4.5, rear: 3, side: 1.5 },
+      cornerLot: false,
+    })
+    render(<PlanView concept={resolved} dimensioned />)
+
+    const dimensions = document.querySelector('[aria-label="Dimensions"]')
+    expect(dimensions).not.toBeNull()
+
+    // One overall width dimension, one per bay column, one per band.
+    const dimensionLines = dimensions?.querySelectorAll('[aria-label^="Dimension:"]') ?? []
+    expect(dimensionLines.length).toBe(1 + resolved.grid.bayCount + resolved.grid.bandCount)
+
+    // Stair-on-spine and courtyard-open still hold with dimensions on.
+    expect(document.querySelector('[aria-label="Stair"]')).not.toBeNull()
+    expect(resolved.stair.col).toBe(resolved.spine.col)
   })
 })
