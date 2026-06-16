@@ -426,10 +426,135 @@ export const cornerResidentialParti: Parti = {
   ],
 }
 
+// The live-work parti: a four-bay-wide, three-level skeleton that combines a
+// commercial-height ground floor (studio / shop) with a full private home above.
+// Spine at col 1 — same column as family-courtyard — so existing stair cards
+// apply without modification. No courtyard: the taller ground floor provides
+// internal volume and borrowed light from front and rear.
+//
+//            col0 (work)    col1 (spine)   col2 (work)    col3 (work)
+// band0      studio/shop    entry          work area      display/reception
+// band1      back studio    hall           work prep      covered deck
+// band2      utility        hall/stair     rear terrace   rear terrace
+//
+// Upper (living floor): col 0+2+3 band 0 + col 0 band 1 → kitchen / living / dining.
+// Level2plus (sleeping): same footprint → bedrooms.
+// col 2 band 1, col 0+2 band 2 are unbuilt on both upper levels.
+export const liveWorkParti: Parti = {
+  id: 'live-work',
+  bayCount: 4,
+  bandCount: 3,
+  bandRatios: [0.30, 0.38, 0.32],
+  spineCol: 1,
+  groundFloorToFloorM: 3.6,
+  groundBaseElevationM: 0,
+  fixed: [
+    { addr: { col: 1, band: 0 }, fill: { kind: 'circulation', label: 'Entry' } },
+    { addr: { col: 1, band: 1 }, fill: { kind: 'circulation', label: 'Hall' } },
+    { addr: { col: 1, band: 2 }, fill: { kind: 'circulation', label: 'Hall' } },
+    { addr: { col: 0, band: 2 }, fill: { kind: 'service', label: 'Utility' } },
+  ],
+  openCandidates: [],
+  slots: [
+    {
+      category: 'indoor-living',
+      targets: [
+        { col: 0, band: 0 },
+        { col: 2, band: 0 },
+        { col: 3, band: 0 },
+        { col: 0, band: 1 },
+        { col: 2, band: 1 },
+      ],
+    },
+    { category: 'outdoor-rooms', targets: [{ col: 3, band: 1 }] },
+    {
+      category: 'rear-terrace',
+      targets: [
+        { col: 2, band: 2 },
+        { col: 3, band: 2 },
+      ],
+    },
+    { category: 'spine-stair', targets: [{ col: 1, band: 1 }, { col: 1, band: 2 }] },
+  ],
+  levels: [
+    // Living floor — kitchen, living, dining
+    {
+      id: 'upper',
+      floorToFloorM: 3.0,
+      baseElevationM: 3.6,
+      fixed: [
+        { addr: { col: 1, band: 0 }, fill: { kind: 'circulation', label: 'Landing' } },
+        { addr: { col: 1, band: 1 }, fill: { kind: 'circulation', label: 'Hall' } },
+        { addr: { col: 1, band: 2 }, fill: { kind: 'circulation', label: 'Hall' } },
+      ],
+      slots: [
+        {
+          category: 'sleeping',
+          targets: [
+            { col: 0, band: 0 },
+            { col: 2, band: 0 },
+            { col: 3, band: 0 },
+            { col: 0, band: 1 },
+          ],
+        },
+        {
+          category: 'upper-terrace',
+          targets: [
+            { col: 3, band: 1 },
+            { col: 3, band: 2 },
+          ],
+        },
+        { category: 'spine-stair', targets: [{ col: 1, band: 1 }, { col: 1, band: 2 }] },
+      ],
+      unbuilt: [
+        { col: 2, band: 1 },
+        { col: 0, band: 2 },
+        { col: 2, band: 2 },
+      ],
+    },
+    // Sleeping floor — bedrooms
+    {
+      id: 'level2plus',
+      floorToFloorM: 2.8,
+      baseElevationM: 6.6,
+      fixed: [
+        { addr: { col: 1, band: 0 }, fill: { kind: 'circulation', label: 'Landing' } },
+        { addr: { col: 1, band: 1 }, fill: { kind: 'circulation', label: 'Hall' } },
+        { addr: { col: 1, band: 2 }, fill: { kind: 'circulation', label: 'Hall' } },
+      ],
+      slots: [
+        {
+          category: 'sleeping',
+          targets: [
+            { col: 0, band: 0 },
+            { col: 2, band: 0 },
+            { col: 3, band: 0 },
+            { col: 0, band: 1 },
+          ],
+        },
+        {
+          category: 'upper-terrace',
+          targets: [
+            { col: 3, band: 1 },
+            { col: 3, band: 2 },
+          ],
+        },
+        { category: 'spine-stair', targets: [{ col: 1, band: 1 }, { col: 1, band: 2 }] },
+      ],
+      unbuilt: [
+        { col: 2, band: 1 },
+        { col: 0, band: 2 },
+        { col: 2, band: 2 },
+      ],
+    },
+  ],
+}
+
 export const PARTIS: Record<string, Parti> = {
   'family-courtyard': familyCourtyardParti,
   'dual-key': dualKeyParti,
   'intergenerational': intergenerationalParti,
   'narrow-lot': narrowLotParti,
   'corner-residential': cornerResidentialParti,
+  'live-work': liveWorkParti,
 }
