@@ -32,6 +32,15 @@ export const CARDS: CardDef[] = [
     tiers: ['core', 'pro'],
     params: { partiId: 'intergenerational', levels: 2 },
   },
+  {
+    id: 'archetype-narrow-lot',
+    category: 'archetype',
+    title: 'Narrow-lot home',
+    blurb:
+      'A two-storey home designed for a tighter block, with rooms stacked front to back and a private courtyard bringing light into the centre of the plan.',
+    tiers: ['core', 'pro'],
+    params: { partiId: 'narrow-lot', levels: 2 },
+  },
 
   // --- site (bones) ---
   {
@@ -107,11 +116,21 @@ export const CARDS: CardDef[] = [
         levels: ['ground', 'upper'],
       },
     ],
-    // DECISION: courtyard cards are family-courtyard specific — other partis
-    // provide their own no-courtyard defaults listed above this entry.
+    // DECISION: courtyard cards are available for family-courtyard and
+    // narrow-lot; DK and IG provide their own no-courtyard defaults above.
     availableWhen: (ctx) =>
       ctx.selections.archetype !== 'archetype-dual-key' &&
       ctx.selections.archetype !== 'archetype-intergenerational',
+  },
+  {
+    id: 'courtyard-none-nl',
+    category: 'courtyard',
+    title: 'Open garden, no courtyard',
+    blurb: 'The plan opens to a garden at the rear instead of a central courtyard.',
+    tiers: ['core', 'pro'],
+    params: {},
+    cellOps: [],
+    availableWhen: (ctx) => ctx.selections.archetype === 'archetype-narrow-lot',
   },
   {
     id: 'courtyard-deep',
@@ -176,6 +195,39 @@ export const CARDS: CardDef[] = [
     ],
     availableWhen: (ctx) => ctx.selections.archetype === 'archetype-intergenerational',
   },
+  // Narrow-lot specific: listed before the 4-bay cards so NL picks these as
+  // defaults. NL has only 3 bays — col 3 would be out of bounds.
+  {
+    id: 'living-nl-open',
+    category: 'indoor-living',
+    title: 'Living and kitchen around the courtyard',
+    blurb:
+      'Living faces the street while the kitchen wraps around the courtyard, keeping both rooms filled with natural light.',
+    tiers: ['core', 'pro'],
+    params: {},
+    cellOps: [
+      { addr: { col: 2, band: 0 }, fill: { kind: 'living', label: 'Living' } },
+      { addr: { col: 0, band: 1 }, fill: { kind: 'kitchen', label: 'Kitchen' } },
+      { addr: { col: 2, band: 1 }, fill: { kind: 'dining', label: 'Dining' } },
+    ],
+    availableWhen: (ctx) => ctx.selections.archetype === 'archetype-narrow-lot',
+  },
+  {
+    id: 'living-nl-work',
+    category: 'indoor-living',
+    title: 'Living with a home office',
+    blurb:
+      'A home office takes the front room beside the entry, with the kitchen and living area toward the courtyard.',
+    tiers: ['core', 'pro'],
+    params: {},
+    cellOps: [
+      { addr: { col: 2, band: 0 }, fill: { kind: 'work', label: 'Home Office' } },
+      { addr: { col: 0, band: 1 }, fill: { kind: 'kitchen', label: 'Kitchen' } },
+      { addr: { col: 2, band: 1 }, fill: { kind: 'living', label: 'Living' } },
+    ],
+    tradeoff: 'The home office takes the front room, keeping work close to the entry.',
+    availableWhen: (ctx) => ctx.selections.archetype === 'archetype-narrow-lot',
+  },
   {
     id: 'living-open',
     category: 'indoor-living',
@@ -190,6 +242,7 @@ export const CARDS: CardDef[] = [
       { addr: { col: 0, band: 1 }, fill: { kind: 'kitchen', label: 'Kitchen' } },
       { addr: { col: 3, band: 1 }, fill: { kind: 'living', label: 'Family Room' } },
     ],
+    availableWhen: (ctx) => ctx.selections.archetype !== 'archetype-narrow-lot',
   },
   {
     id: 'living-work',
@@ -207,6 +260,7 @@ export const CARDS: CardDef[] = [
     ],
     tradeoff:
       'Adding a home office here moves dining next to the kitchen, closer to the courtyard.',
+    availableWhen: (ctx) => ctx.selections.archetype !== 'archetype-narrow-lot',
   },
 
   // --- sleeping (fill, upper level) ---
@@ -244,6 +298,37 @@ export const CARDS: CardDef[] = [
     ],
     availableWhen: (ctx) => ctx.selections.archetype === 'archetype-dual-key',
   },
+  // Narrow-lot specific sleeping: only 3 upper targets (no col 3).
+  {
+    id: 'sleeping-nl-three-bed',
+    category: 'sleeping',
+    title: 'Three bedrooms upstairs',
+    blurb:
+      'A main bedroom at the front and two further bedrooms make the most of the upper floor.',
+    tiers: ['core', 'pro'],
+    params: {},
+    cellOps: [
+      { addr: { col: 0, band: 0 }, fill: { kind: 'master', label: 'Main Bedroom' }, levels: ['upper'] },
+      { addr: { col: 2, band: 0 }, fill: { kind: 'bedroom', label: 'Bedroom 2' }, levels: ['upper'] },
+      { addr: { col: 0, band: 1 }, fill: { kind: 'bedroom', label: 'Bedroom 3' }, levels: ['upper'] },
+    ],
+    availableWhen: (ctx) => ctx.selections.archetype === 'archetype-narrow-lot',
+  },
+  {
+    id: 'sleeping-nl-two-bed',
+    category: 'sleeping',
+    title: 'Two bedrooms and a bathroom upstairs',
+    blurb:
+      'A main bedroom and a second bedroom share the upper floor with a dedicated bathroom.',
+    tiers: ['core', 'pro'],
+    params: {},
+    cellOps: [
+      { addr: { col: 0, band: 0 }, fill: { kind: 'master', label: 'Main Bedroom' }, levels: ['upper'] },
+      { addr: { col: 2, band: 0 }, fill: { kind: 'bedroom', label: 'Bedroom 2' }, levels: ['upper'] },
+      { addr: { col: 0, band: 1 }, fill: { kind: 'bath', label: 'Bathroom' }, levels: ['upper'] },
+    ],
+    availableWhen: (ctx) => ctx.selections.archetype === 'archetype-narrow-lot',
+  },
   {
     id: 'sleeping-family',
     category: 'sleeping',
@@ -258,6 +343,7 @@ export const CARDS: CardDef[] = [
       { addr: { col: 3, band: 0 }, fill: { kind: 'bath', label: 'Bathroom' }, levels: ['upper'] },
       { addr: { col: 0, band: 1 }, fill: { kind: 'bedroom', label: 'Bedroom 3' }, levels: ['upper'] },
     ],
+    availableWhen: (ctx) => ctx.selections.archetype !== 'archetype-narrow-lot',
   },
   {
     id: 'sleeping-guest',
@@ -273,6 +359,7 @@ export const CARDS: CardDef[] = [
       { addr: { col: 3, band: 0 }, fill: { kind: 'bedroom', label: 'Guest Room' }, levels: ['upper'] },
       { addr: { col: 0, band: 1 }, fill: { kind: 'bedroom', label: 'Bedroom 2' }, levels: ['upper'] },
     ],
+    availableWhen: (ctx) => ctx.selections.archetype !== 'archetype-narrow-lot',
   },
 
   // --- spine-stair (fill) ---
@@ -320,6 +407,31 @@ export const CARDS: CardDef[] = [
   },
 
   // --- rear-terrace (fill) ---
+  // Narrow-lot specific: only one rear cell (col 2, band 2) — no col 3.
+  {
+    id: 'terrace-nl-standard',
+    category: 'rear-terrace',
+    title: 'Back terrace',
+    blurb: 'A terrace at the back connects the home to the garden.',
+    tiers: ['core', 'pro'],
+    params: {},
+    cellOps: [
+      { addr: { col: 2, band: 2 }, fill: { kind: 'outdoor-room', label: 'Terrace' } },
+    ],
+    availableWhen: (ctx) => ctx.selections.archetype === 'archetype-narrow-lot',
+  },
+  {
+    id: 'terrace-nl-garden',
+    category: 'rear-terrace',
+    title: 'Back garden room',
+    blurb: 'An open garden room at the back gives the home extra outdoor space to enjoy.',
+    tiers: ['core', 'pro'],
+    params: {},
+    cellOps: [
+      { addr: { col: 2, band: 2 }, fill: { kind: 'outdoor-room', label: 'Garden Room' } },
+    ],
+    availableWhen: (ctx) => ctx.selections.archetype === 'archetype-narrow-lot',
+  },
   {
     id: 'terrace-standard',
     category: 'rear-terrace',
@@ -331,6 +443,7 @@ export const CARDS: CardDef[] = [
       { addr: { col: 3, band: 2 }, fill: { kind: 'outdoor-room', label: 'Terrace' } },
       { addr: { col: 2, band: 2 }, fill: { kind: 'outdoor-room', label: 'Terrace' } },
     ],
+    availableWhen: (ctx) => ctx.selections.archetype !== 'archetype-narrow-lot',
   },
   {
     id: 'terrace-garden',
@@ -343,6 +456,7 @@ export const CARDS: CardDef[] = [
       { addr: { col: 3, band: 2 }, fill: { kind: 'outdoor-room', label: 'Garden Room' } },
       { addr: { col: 2, band: 2 }, fill: { kind: 'outdoor-room', label: 'Garden Room' } },
     ],
+    availableWhen: (ctx) => ctx.selections.archetype !== 'archetype-narrow-lot',
   },
 
   // --- outdoor-rooms (fill) ---
@@ -364,10 +478,40 @@ export const CARDS: CardDef[] = [
     params: {},
     cellOps: [{ addr: { col: 3, band: 1 }, fill: { kind: 'outdoor-room', label: 'Covered Deck' } }],
     tradeoff: 'Opening this room to the courtyard trades one indoor room for a covered deck.',
-    availableWhen: (ctx) => ctx.selections.site !== 'site-narrow',
+    availableWhen: (ctx) =>
+      ctx.selections.site !== 'site-narrow' &&
+      ctx.selections.archetype !== 'archetype-narrow-lot',
   },
 
   // --- upper-terrace (fill) ---
+  // Narrow-lot specific: upper terrace at col 2 (col 3 OOB for 3-bay grid).
+  {
+    id: 'upper-terrace-nl-open',
+    category: 'upper-terrace',
+    title: 'Roof terrace',
+    blurb: 'An open roof terrace above the courtyard catches the afternoon sun.',
+    tiers: ['core', 'pro'],
+    params: {},
+    cellOps: [
+      { addr: { col: 2, band: 1 }, fill: { kind: 'outdoor-room', label: 'Roof Terrace' }, levels: ['upper'] },
+      { addr: { col: 2, band: 2 }, fill: { kind: 'outdoor-room', label: 'Roof Terrace' }, levels: ['upper'] },
+    ],
+    availableWhen: (ctx) => ctx.selections.archetype === 'archetype-narrow-lot',
+  },
+  {
+    id: 'upper-terrace-nl-studio',
+    category: 'upper-terrace',
+    title: 'Studio with a balcony',
+    blurb: 'A studio sits above the courtyard and opens onto a small balcony at the rear.',
+    tiers: ['core', 'pro'],
+    params: {},
+    cellOps: [
+      { addr: { col: 2, band: 1 }, fill: { kind: 'work', label: 'Studio' }, levels: ['upper'] },
+      { addr: { col: 2, band: 2 }, fill: { kind: 'outdoor-room', label: 'Balcony' }, levels: ['upper'] },
+    ],
+    tradeoff: 'The studio replaces the roof terrace, giving you a separate work space above the courtyard.',
+    availableWhen: (ctx) => ctx.selections.archetype === 'archetype-narrow-lot',
+  },
   {
     id: 'upper-terrace-open',
     category: 'upper-terrace',
@@ -379,6 +523,7 @@ export const CARDS: CardDef[] = [
       { addr: { col: 3, band: 1 }, fill: { kind: 'outdoor-room', label: 'Terrace' }, levels: ['upper'] },
       { addr: { col: 3, band: 2 }, fill: { kind: 'outdoor-room', label: 'Terrace' }, levels: ['upper'] },
     ],
+    availableWhen: (ctx) => ctx.selections.archetype !== 'archetype-narrow-lot',
   },
   {
     id: 'upper-terrace-studio',
@@ -392,6 +537,7 @@ export const CARDS: CardDef[] = [
       { addr: { col: 3, band: 2 }, fill: { kind: 'outdoor-room', label: 'Balcony' }, levels: ['upper'] },
     ],
     tradeoff: 'The studio takes the place of a roof terrace, giving you a separate work space upstairs.',
+    availableWhen: (ctx) => ctx.selections.archetype !== 'archetype-narrow-lot',
   },
 
   // --- palette (fill) ---

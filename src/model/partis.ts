@@ -265,8 +265,83 @@ export const intergenerationalParti: Parti = {
   ],
 }
 
+// The narrow-lot parti: a tighter 3-bay-wide skeleton for blocks under ~12 m.
+// Depth compensates for the reduced frontage; the spine (col 1) and courtyard
+// (col 2, band 1) still deliver cross-ventilation and borrowed light.
+//
+//            col0          col1 (spine)   col2
+// band0      forecourt     entry          living / home office
+// band1      kitchen       hall           courtyard (open candidate)
+// band2      utility       hall/stair     rear terrace
+//
+// Upper: band2/col0 is unbuilt (reads as rear eave); col2 upper terrace.
+export const narrowLotParti: Parti = {
+  id: 'narrow-lot',
+  bayCount: 3,
+  bandCount: 3,
+  bandRatios: [0.28, 0.44, 0.28],
+  spineCol: 1,
+  groundFloorToFloorM: 3.2,
+  groundBaseElevationM: 0,
+  fixed: [
+    { addr: { col: 1, band: 0 }, fill: { kind: 'circulation', label: 'Entry' } },
+    { addr: { col: 1, band: 1 }, fill: { kind: 'circulation', label: 'Hall' } },
+    { addr: { col: 1, band: 2 }, fill: { kind: 'circulation', label: 'Hall' } },
+    { addr: { col: 0, band: 2 }, fill: { kind: 'service', label: 'Utility' } },
+  ],
+  openCandidates: [
+    { col: 2, band: 1 },
+    { col: 2, band: 2 },
+  ],
+  slots: [
+    {
+      category: 'indoor-living',
+      targets: [
+        { col: 2, band: 0 },
+        { col: 0, band: 1 },
+        { col: 2, band: 1 },
+      ],
+    },
+    { category: 'forecourt', targets: [{ col: 0, band: 0 }] },
+    { category: 'rear-terrace', targets: [{ col: 2, band: 2 }] },
+    { category: 'spine-stair', targets: [{ col: 1, band: 1 }, { col: 1, band: 2 }] },
+  ],
+  levels: [
+    {
+      id: 'upper',
+      floorToFloorM: 3.0,
+      baseElevationM: 3.2,
+      fixed: [
+        { addr: { col: 1, band: 0 }, fill: { kind: 'circulation', label: 'Landing' } },
+        { addr: { col: 1, band: 1 }, fill: { kind: 'circulation', label: 'Hall' } },
+        { addr: { col: 1, band: 2 }, fill: { kind: 'circulation', label: 'Hall' } },
+      ],
+      slots: [
+        {
+          category: 'sleeping',
+          targets: [
+            { col: 0, band: 0 },
+            { col: 2, band: 0 },
+            { col: 0, band: 1 },
+          ],
+        },
+        {
+          category: 'upper-terrace',
+          targets: [
+            { col: 2, band: 1 },
+            { col: 2, band: 2 },
+          ],
+        },
+        { category: 'spine-stair', targets: [{ col: 1, band: 1 }, { col: 1, band: 2 }] },
+      ],
+      unbuilt: [{ col: 0, band: 2 }],
+    },
+  ],
+}
+
 export const PARTIS: Record<string, Parti> = {
   'family-courtyard': familyCourtyardParti,
   'dual-key': dualKeyParti,
   'intergenerational': intergenerationalParti,
+  'narrow-lot': narrowLotParti,
 }
