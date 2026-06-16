@@ -12,6 +12,7 @@ export default function ShapePage() {
   const setSelection = useConceptStore((s) => s.setSelection)
   const setOpenCategory = useConceptStore((s) => s.setOpenCategory)
   const advanceCategory = useConceptStore((s) => s.advanceCategory)
+  const switchArchetype = useConceptStore((s) => s.switchArchetype)
 
   useEffect(() => {
     ensureSelections()
@@ -51,8 +52,13 @@ export default function ShapePage() {
           selections={activeSelections}
           category={openCategory}
           onSelectCard={(cardId) => {
-            setSelection(openCategory, cardId)
-            advanceCategory()
+            if (openCategory === 'archetype') {
+              // DECISION: archetype changes clear all fills — see switchArchetype
+              switchArchetype(cardId)
+            } else {
+              setSelection(openCategory, cardId)
+              advanceCategory()
+            }
           }}
         />
       </div>

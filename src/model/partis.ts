@@ -88,6 +88,15 @@ export const familyCourtyardParti: Parti = {
   ],
 }
 
+// Gate 0 stub: identical geometry to family-courtyard, registered solely to
+// verify that the registry-driven test suite and zero-card guard scale to
+// more than one parti. Replaced by the dual-key parti in the next commit.
+export const gateZeroStubParti: Parti = {
+  ...familyCourtyardParti,
+  id: 'gate0-stub',
+}
+
 export const PARTIS: Record<string, Parti> = {
   'family-courtyard': familyCourtyardParti,
+  'gate0-stub': gateZeroStubParti,
 }

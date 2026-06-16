@@ -14,6 +14,7 @@ export interface ConceptState {
   setSelection: (category: CardCategory, cardId: string) => void
   setOpenCategory: (category: CardCategory) => void
   advanceCategory: () => void
+  switchArchetype: (cardId: string) => void
 }
 
 export const useConceptStore = create<ConceptState>()(
@@ -45,6 +46,14 @@ export const useConceptStore = create<ConceptState>()(
         const next = CATEGORY_ORDER[CATEGORY_ORDER.indexOf(openCategory) + 1]
         if (next) set({ openCategory: next })
       },
+
+      // DECISION: switching archetype clears all card fills and advances to
+      // the 'site' category. The assembler re-derives every other category
+      // from defaults on the next render (brief §8 pre-fill philosophy).
+      // Carrying over fills would risk invalid geometry: different partis
+      // have different grid sizes and slot-to-cell mappings.
+      switchArchetype: (cardId) =>
+        set({ selections: { archetype: cardId }, openCategory: CATEGORY_ORDER[1] }),
     }),
     { name: 'altira-concept-store' },
   ),

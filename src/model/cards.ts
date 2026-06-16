@@ -14,6 +14,22 @@ export const CARDS: CardDef[] = [
     tiers: ['core', 'pro'],
     params: { partiId: 'family-courtyard', levels: 2 },
   },
+  // Gate 0 stub: exercises the registry-driven test suite with a second
+  // registered parti. Hidden from the Shape tray (availableWhen returns
+  // false unless it is already selected). Replaced by the first real parti
+  // (dual-key) in the next commit.
+  {
+    id: 'archetype-gate0-stub',
+    category: 'archetype',
+    title: 'Compact courtyard home',
+    blurb: 'A smaller home arranged around a central garden, suited to a tighter block.',
+    tiers: ['core', 'pro'],
+    params: { partiId: 'gate0-stub', levels: 2 },
+    // DECISION: self-referential guard keeps this invisible in the real UI
+    // while still being resolvable by the assembler when directly selected
+    // in tests (availableWhen passes when the card is already chosen).
+    availableWhen: (ctx) => ctx.selections.archetype === 'archetype-gate0-stub',
+  },
 
   // --- site (bones) ---
   {
