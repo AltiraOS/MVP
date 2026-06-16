@@ -23,6 +23,15 @@ export const CARDS: CardDef[] = [
     tiers: ['core', 'pro'],
     params: { partiId: 'dual-key', levels: 2 },
   },
+  {
+    id: 'archetype-intergenerational',
+    category: 'archetype',
+    title: 'Intergenerational home',
+    blurb:
+      'A home designed to bring two generations under one roof — a main family dwelling alongside a private, accessible suite for a parent or grandparent on the ground floor.',
+    tiers: ['core', 'pro'],
+    params: { partiId: 'intergenerational', levels: 2 },
+  },
 
   // --- site (bones) ---
   {
@@ -59,9 +68,20 @@ export const CARDS: CardDef[] = [
   },
 
   // --- courtyard (bones) ---
-  // Dual-key specific: listed first so it is picked as the default for
-  // dual-key (no courtyard in a stacked two-unit home). Family-courtyard
-  // falls through to courtyard-centre below.
+  // Parti-specific "no courtyard" cards are listed first so each non-courtyard
+  // archetype picks them as its default before reaching the family-courtyard
+  // options below. Family-courtyard falls through to courtyard-centre.
+  {
+    id: 'courtyard-none-ig',
+    category: 'courtyard',
+    title: 'Garden between the homes',
+    blurb:
+      'A garden connects both parts of the home to the outdoors, with private outdoor space front and rear.',
+    tiers: ['core', 'pro'],
+    params: {},
+    cellOps: [],
+    availableWhen: (ctx) => ctx.selections.archetype === 'archetype-intergenerational',
+  },
   {
     id: 'courtyard-none-dk',
     category: 'courtyard',
@@ -87,6 +107,11 @@ export const CARDS: CardDef[] = [
         levels: ['ground', 'upper'],
       },
     ],
+    // DECISION: courtyard cards are family-courtyard specific — other partis
+    // provide their own no-courtyard defaults listed above this entry.
+    availableWhen: (ctx) =>
+      ctx.selections.archetype !== 'archetype-dual-key' &&
+      ctx.selections.archetype !== 'archetype-intergenerational',
   },
   {
     id: 'courtyard-deep',
@@ -110,9 +135,47 @@ export const CARDS: CardDef[] = [
         levels: ['ground', 'upper'],
       },
     ],
+    availableWhen: (ctx) =>
+      ctx.selections.archetype !== 'archetype-dual-key' &&
+      ctx.selections.archetype !== 'archetype-intergenerational',
   },
 
   // --- indoor-living (fill) ---
+  // Intergenerational specific: listed first so IG picks them before the
+  // family-courtyard cards. (0,1) becomes the secondary bedroom rather than
+  // the kitchen; kitchen moves to (3,0).
+  {
+    id: 'living-ig-standard',
+    category: 'indoor-living',
+    title: 'Open living with a secondary bedroom',
+    blurb:
+      'Living, kitchen and dining wrap around the garden, with a private ground-floor bedroom for a family member who lives alongside.',
+    tiers: ['core', 'pro'],
+    params: {},
+    cellOps: [
+      { addr: { col: 2, band: 0 }, fill: { kind: 'living', label: 'Living' } },
+      { addr: { col: 3, band: 0 }, fill: { kind: 'kitchen', label: 'Kitchen' } },
+      { addr: { col: 0, band: 1 }, fill: { kind: 'bedroom', label: 'Secondary Bedroom' } },
+      { addr: { col: 3, band: 1 }, fill: { kind: 'dining', label: 'Dining' } },
+    ],
+    availableWhen: (ctx) => ctx.selections.archetype === 'archetype-intergenerational',
+  },
+  {
+    id: 'living-ig-study',
+    category: 'indoor-living',
+    title: 'Open living with a study or retreat',
+    blurb:
+      'A quiet ground-floor room near the entry becomes a calm study or retreat — useful for a grandparent or family member who needs their own space.',
+    tiers: ['core', 'pro'],
+    params: {},
+    cellOps: [
+      { addr: { col: 2, band: 0 }, fill: { kind: 'living', label: 'Living' } },
+      { addr: { col: 3, band: 0 }, fill: { kind: 'kitchen', label: 'Kitchen' } },
+      { addr: { col: 0, band: 1 }, fill: { kind: 'work', label: 'Study' } },
+      { addr: { col: 3, band: 1 }, fill: { kind: 'dining', label: 'Dining' } },
+    ],
+    availableWhen: (ctx) => ctx.selections.archetype === 'archetype-intergenerational',
+  },
   {
     id: 'living-open',
     category: 'indoor-living',

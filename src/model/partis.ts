@@ -176,7 +176,97 @@ export const dualKeyParti: Parti = {
   ],
 }
 
+// The intergenerational parti: a main family dwelling alongside a private,
+// accessible suite for a parent or grandparent on the ground floor.
+// The secondary suite occupies (0,1) ground — the slot that holds "Kitchen"
+// in family-courtyard — with the kitchen moved to (3,0). The upper floor is
+// entirely main family bedrooms. No courtyard (open garden front and rear).
+//
+//            col0               col1 (spine)    col2           col3
+// band0      forecourt          shared entry    living         dining / kitchen
+// band1      secondary bedroom  hall            [courtyard     family / dining
+//                                               candidate]
+// band2      utility            hall/stair      rear garden    rear terrace
+//
+// Upper (main family only):
+// band0      main bedroom       landing         bedroom 2      bathroom
+// band1      bedroom 3          hall            [unbuilt]      terrace
+// band2      [unbuilt]          hall            [unbuilt]      terrace
+export const intergenerationalParti: Parti = {
+  id: 'intergenerational',
+  bayCount: 4,
+  bandCount: 3,
+  bandRatios: [0.30, 0.42, 0.28],
+  spineCol: 1,
+  groundFloorToFloorM: 3.2,
+  groundBaseElevationM: 0,
+  fixed: [
+    { addr: { col: 1, band: 0 }, fill: { kind: 'circulation', label: 'Shared Entry' } },
+    { addr: { col: 1, band: 1 }, fill: { kind: 'circulation', label: 'Hall' } },
+    { addr: { col: 1, band: 2 }, fill: { kind: 'circulation', label: 'Hall' } },
+    { addr: { col: 0, band: 2 }, fill: { kind: 'service', label: 'Utility' } },
+  ],
+  openCandidates: [],
+  slots: [
+    {
+      category: 'indoor-living',
+      targets: [
+        { col: 2, band: 0 },
+        { col: 3, band: 0 },
+        { col: 0, band: 1 },
+        { col: 3, band: 1 },
+      ],
+    },
+    { category: 'forecourt', targets: [{ col: 0, band: 0 }] },
+    {
+      category: 'rear-terrace',
+      targets: [
+        { col: 3, band: 2 },
+        { col: 2, band: 2 },
+      ],
+    },
+    { category: 'spine-stair', targets: [{ col: 1, band: 1 }, { col: 1, band: 2 }] },
+    { category: 'outdoor-rooms', targets: [{ col: 3, band: 1 }] },
+  ],
+  levels: [
+    {
+      id: 'upper',
+      floorToFloorM: 3.0,
+      baseElevationM: 3.2,
+      fixed: [
+        { addr: { col: 1, band: 0 }, fill: { kind: 'circulation', label: 'Landing' } },
+        { addr: { col: 1, band: 1 }, fill: { kind: 'circulation', label: 'Hall' } },
+        { addr: { col: 1, band: 2 }, fill: { kind: 'circulation', label: 'Hall' } },
+      ],
+      slots: [
+        {
+          category: 'sleeping',
+          targets: [
+            { col: 0, band: 0 },
+            { col: 2, band: 0 },
+            { col: 3, band: 0 },
+            { col: 0, band: 1 },
+          ],
+        },
+        {
+          category: 'upper-terrace',
+          targets: [
+            { col: 3, band: 1 },
+            { col: 3, band: 2 },
+          ],
+        },
+        { category: 'spine-stair', targets: [{ col: 1, band: 1 }, { col: 1, band: 2 }] },
+      ],
+      unbuilt: [
+        { col: 0, band: 2 },
+        { col: 2, band: 2 },
+      ],
+    },
+  ],
+}
+
 export const PARTIS: Record<string, Parti> = {
   'family-courtyard': familyCourtyardParti,
   'dual-key': dualKeyParti,
+  'intergenerational': intergenerationalParti,
 }
