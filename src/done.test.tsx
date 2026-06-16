@@ -122,12 +122,12 @@ describe('Gate 0 §3c: archetype switch re-assembles to a valid, complete board'
 
   it('clears all fills and produces a valid concept from the new parti defaults', () => {
     const { switchArchetype } = useConceptStore.getState()
-    switchArchetype('archetype-gate0-stub')
+    switchArchetype('archetype-dual-key')
 
     const state = useConceptStore.getState()
 
     // All fills are cleared — only the new archetype card id remains
-    expect(state.selections).toEqual({ archetype: 'archetype-gate0-stub' })
+    expect(state.selections).toEqual({ archetype: 'archetype-dual-key' })
 
     // openCategory advances to the next step (site)
     expect(state.openCategory).toBe(CATEGORY_ORDER[1])

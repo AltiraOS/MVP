@@ -14,21 +14,14 @@ export const CARDS: CardDef[] = [
     tiers: ['core', 'pro'],
     params: { partiId: 'family-courtyard', levels: 2 },
   },
-  // Gate 0 stub: exercises the registry-driven test suite with a second
-  // registered parti. Hidden from the Shape tray (availableWhen returns
-  // false unless it is already selected). Replaced by the first real parti
-  // (dual-key) in the next commit.
   {
-    id: 'archetype-gate0-stub',
+    id: 'archetype-dual-key',
     category: 'archetype',
-    title: 'Compact courtyard home',
-    blurb: 'A smaller home arranged around a central garden, suited to a tighter block.',
+    title: 'Dual-key home',
+    blurb:
+      'A home designed as two complete, self-contained dwellings under one roof — each with its own entry, living areas and sleeping spaces.',
     tiers: ['core', 'pro'],
-    params: { partiId: 'gate0-stub', levels: 2 },
-    // DECISION: self-referential guard keeps this invisible in the real UI
-    // while still being resolvable by the assembler when directly selected
-    // in tests (availableWhen passes when the card is already chosen).
-    availableWhen: (ctx) => ctx.selections.archetype === 'archetype-gate0-stub',
+    params: { partiId: 'dual-key', levels: 2 },
   },
 
   // --- site (bones) ---
@@ -66,6 +59,19 @@ export const CARDS: CardDef[] = [
   },
 
   // --- courtyard (bones) ---
+  // Dual-key specific: listed first so it is picked as the default for
+  // dual-key (no courtyard in a stacked two-unit home). Family-courtyard
+  // falls through to courtyard-centre below.
+  {
+    id: 'courtyard-none-dk',
+    category: 'courtyard',
+    title: 'No shared courtyard',
+    blurb: 'Each home has its own outdoor space front and rear, keeping both households private.',
+    tiers: ['core', 'pro'],
+    params: {},
+    cellOps: [],
+    availableWhen: (ctx) => ctx.selections.archetype === 'archetype-dual-key',
+  },
   {
     id: 'courtyard-centre',
     category: 'courtyard',
@@ -141,6 +147,40 @@ export const CARDS: CardDef[] = [
   },
 
   // --- sleeping (fill, upper level) ---
+  // Dual-key specific: listed first so they are picked as the default for
+  // dual-key (Unit 2 needs its own living + kitchen on the upper floor, not
+  // family bedrooms). Family-courtyard falls through to sleeping-family below.
+  {
+    id: 'sleeping-upper-unit-two-bed',
+    category: 'sleeping',
+    title: 'Upper home: living area and two bedrooms',
+    blurb:
+      'The upper home has its own open living area, kitchen and two bedrooms — a complete, self-contained place to live.',
+    tiers: ['core', 'pro'],
+    params: {},
+    cellOps: [
+      { addr: { col: 0, band: 0 }, fill: { kind: 'master', label: 'Upper Bedroom' }, levels: ['upper'] },
+      { addr: { col: 2, band: 0 }, fill: { kind: 'living', label: 'Upper Living' }, levels: ['upper'] },
+      { addr: { col: 3, band: 0 }, fill: { kind: 'kitchen', label: 'Upper Kitchen' }, levels: ['upper'] },
+      { addr: { col: 0, band: 1 }, fill: { kind: 'bedroom', label: 'Upper Bedroom 2' }, levels: ['upper'] },
+    ],
+    availableWhen: (ctx) => ctx.selections.archetype === 'archetype-dual-key',
+  },
+  {
+    id: 'sleeping-upper-unit-one-bed',
+    category: 'sleeping',
+    title: 'Upper home: living area and one bedroom',
+    blurb: 'The upper home has an open living area with kitchen and one private bedroom — ideal for one or two people.',
+    tiers: ['core', 'pro'],
+    params: {},
+    cellOps: [
+      { addr: { col: 0, band: 0 }, fill: { kind: 'master', label: 'Upper Bedroom' }, levels: ['upper'] },
+      { addr: { col: 2, band: 0 }, fill: { kind: 'living', label: 'Upper Living' }, levels: ['upper'] },
+      { addr: { col: 3, band: 0 }, fill: { kind: 'kitchen', label: 'Upper Kitchen' }, levels: ['upper'] },
+      { addr: { col: 0, band: 1 }, fill: { kind: 'bath', label: 'Upper Bathroom' }, levels: ['upper'] },
+    ],
+    availableWhen: (ctx) => ctx.selections.archetype === 'archetype-dual-key',
+  },
   {
     id: 'sleeping-family',
     category: 'sleeping',
