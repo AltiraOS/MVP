@@ -10,6 +10,8 @@ beforeEach(() => {
     brief: DEFAULT_BRIEF,
     selections: deriveInitialSelections(DEFAULT_BRIEF),
     openCategory: 'archetype',
+    mode: 'journey',
+    projectRoom: undefined,
   })
   window.history.pushState({}, '', '/')
 })
@@ -57,5 +59,40 @@ describe('App routing', () => {
       'href',
       'mailto:hello@altira.com.au',
     )
+  })
+
+  it('activating opens the Project Room with the Concept tab populated, and the nav switches to its 7 tabs', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    const nav = screen.getByRole('navigation', { name: /journey progress/i })
+
+    await user.click(within(nav).getByRole('link', { name: /activate/i }))
+    await user.click(screen.getByRole('button', { name: /activate this concept/i }))
+
+    expect(screen.getByRole('heading', { name: /your activated concept/i })).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: /floor plan/i })).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: /section through/i })).toBeInTheDocument()
+
+    const projectNav = screen.getByRole('navigation', { name: /project room navigation/i })
+    for (const label of [
+      'Concept',
+      'Dimensioned Plan',
+      'Section',
+      'Schedules',
+      'Refinements',
+      'Handoff',
+      'Packs',
+    ]) {
+      expect(within(projectNav).getByRole('link', { name: new RegExp(label, 'i') })).toBeInTheDocument()
+    }
+
+    expect(useConceptStore.getState().mode).toBe('project')
+    expect(useConceptStore.getState().projectRoom?.baseline).toBeDefined()
+  })
+
+  it('redirects a direct visit to a Project Room route back to Activate before activation', () => {
+    window.history.pushState({}, '', '/project/concept')
+    render(<App />)
+    expect(screen.getByRole('heading', { name: /ready when you are/i })).toBeInTheDocument()
   })
 })

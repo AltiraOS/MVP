@@ -4,17 +4,23 @@ import type { BriefAnswers, CardCategory, Concept, Selections } from '../model/t
 import { assembleConcept } from '../model/assemble'
 import { DEFAULT_BRIEF, deriveInitialSelections } from '../model/brief'
 import { CATEGORY_ORDER } from '../model/cards'
+import type { ProjectRoom } from '../model/project'
+
+export type AppMode = 'journey' | 'project'
 
 export interface ConceptState {
   brief: BriefAnswers
   selections: Selections
   openCategory: CardCategory
+  mode: AppMode
+  projectRoom?: ProjectRoom
   setBriefAnswer: <K extends keyof BriefAnswers>(key: K, value: BriefAnswers[K]) => void
   ensureSelections: () => void
   setSelection: (category: CardCategory, cardId: string) => void
   setOpenCategory: (category: CardCategory) => void
   advanceCategory: () => void
   switchArchetype: (cardId: string) => void
+  activate: () => void
 }
 
 export const useConceptStore = create<ConceptState>()(
@@ -23,6 +29,8 @@ export const useConceptStore = create<ConceptState>()(
       brief: DEFAULT_BRIEF,
       selections: {},
       openCategory: CATEGORY_ORDER[0],
+      mode: 'journey',
+      projectRoom: undefined,
 
       setBriefAnswer: (key, value) =>
         set((state) => ({ brief: { ...state.brief, [key]: value } })),
@@ -54,6 +62,20 @@ export const useConceptStore = create<ConceptState>()(
       // have different grid sizes and slot-to-cell mappings.
       switchArchetype: (cardId) =>
         set({ selections: { archetype: cardId }, openCategory: CATEGORY_ORDER[1] }),
+
+      // The app changes mode: the activated concept is frozen as the
+      // Project Room's baseline. Re-activating re-freezes from the current
+      // selections but keeps any site already captured (brief §12 gate 1).
+      activate: () => {
+        const { brief, selections, projectRoom } = get()
+        const activeSelections =
+          Object.keys(selections).length > 0 ? selections : deriveInitialSelections(brief)
+        const baseline = assembleConcept(brief, activeSelections)
+        set({
+          mode: 'project',
+          projectRoom: { baseline, site: projectRoom?.site, revisions: [] },
+        })
+      },
     }),
     { name: 'altira-concept-store' },
   ),
