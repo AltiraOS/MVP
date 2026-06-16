@@ -77,6 +77,15 @@ export const CARDS: CardDef[] = [
     tiers: ['pro'],
     params: { partiId: 'stacked-roles', levels: 3 },
   },
+  {
+    id: 'archetype-corner-public',
+    category: 'archetype',
+    title: 'Corner public home',
+    blurb:
+      'A three-storey building on a corner lot where the ground floor is an active public space — a café, gallery or small office — and the two floors above are a private family home.',
+    tiers: ['pro'],
+    params: { partiId: 'corner-public', levels: 3 },
+  },
 
   // --- site (bones) ---
   {
@@ -195,6 +204,16 @@ export const CARDS: CardDef[] = [
     availableWhen: (ctx) => ctx.selections.archetype === 'archetype-stacked-roles',
   },
   {
+    id: 'courtyard-none-cp',
+    category: 'courtyard',
+    title: 'Light from the corner, no courtyard',
+    blurb: 'Cross-light arrives from two street frontages, so the public floor and the home above both stay open rather than turning inward.',
+    tiers: ['pro'],
+    params: {},
+    cellOps: [],
+    availableWhen: (ctx) => ctx.selections.archetype === 'archetype-corner-public',
+  },
+  {
     id: 'courtyard-centre',
     category: 'courtyard',
     title: 'Courtyard, centred',
@@ -217,7 +236,8 @@ export const CARDS: CardDef[] = [
       ctx.selections.archetype !== 'archetype-corner-residential' &&
       ctx.selections.archetype !== 'archetype-live-work' &&
       ctx.selections.archetype !== 'archetype-mixed-use-lowrise' &&
-      ctx.selections.archetype !== 'archetype-stacked-roles',
+      ctx.selections.archetype !== 'archetype-stacked-roles' &&
+      ctx.selections.archetype !== 'archetype-corner-public',
   },
   {
     id: 'courtyard-none-nl',
@@ -257,7 +277,8 @@ export const CARDS: CardDef[] = [
       ctx.selections.archetype !== 'archetype-corner-residential' &&
       ctx.selections.archetype !== 'archetype-live-work' &&
       ctx.selections.archetype !== 'archetype-mixed-use-lowrise' &&
-      ctx.selections.archetype !== 'archetype-stacked-roles',
+      ctx.selections.archetype !== 'archetype-stacked-roles' &&
+      ctx.selections.archetype !== 'archetype-corner-public',
   },
 
   // --- indoor-living (fill) ---
@@ -475,6 +496,43 @@ export const CARDS: CardDef[] = [
     tradeoff: 'A retail front gives the building a public address and a separate storage room behind.',
     availableWhen: (ctx) => ctx.selections.archetype === 'archetype-live-work',
   },
+  // Corner-public specific: the ground floor is an active public use facing the corner.
+  // Five cells wrap the commercial zone (cols 0-1 + col 3), leaving the spine at col 2.
+  {
+    id: 'retail-cp-cafe',
+    category: 'indoor-living',
+    title: 'Café or food venue at the corner',
+    blurb:
+      'A café or food venue wraps the corner — a serving counter near the entry, seating at the front and a kitchen and prep area behind.',
+    tiers: ['pro'],
+    params: {},
+    cellOps: [
+      { addr: { col: 0, band: 0 }, fill: { kind: 'retail', label: 'Café' } },
+      { addr: { col: 1, band: 0 }, fill: { kind: 'retail', label: 'Seating' } },
+      { addr: { col: 3, band: 0 }, fill: { kind: 'retail', label: 'Counter' } },
+      { addr: { col: 0, band: 1 }, fill: { kind: 'work', label: 'Kitchen' } },
+      { addr: { col: 1, band: 1 }, fill: { kind: 'work', label: 'Prep' } },
+    ],
+    availableWhen: (ctx) => ctx.selections.archetype === 'archetype-corner-public',
+  },
+  {
+    id: 'retail-cp-gallery',
+    category: 'indoor-living',
+    title: 'Gallery or creative studio at the corner',
+    blurb:
+      'An open gallery or creative studio faces both streets at the corner — a display space up front and a working studio behind, with good light from two directions.',
+    tiers: ['pro'],
+    params: {},
+    cellOps: [
+      { addr: { col: 0, band: 0 }, fill: { kind: 'retail', label: 'Gallery' } },
+      { addr: { col: 1, band: 0 }, fill: { kind: 'retail', label: 'Display' } },
+      { addr: { col: 3, band: 0 }, fill: { kind: 'retail', label: 'Entry Display' } },
+      { addr: { col: 0, band: 1 }, fill: { kind: 'work', label: 'Studio' } },
+      { addr: { col: 1, band: 1 }, fill: { kind: 'work', label: 'Storage' } },
+    ],
+    tradeoff: 'A gallery or studio gives the ground floor a quieter, more private feel than a food venue.',
+    availableWhen: (ctx) => ctx.selections.archetype === 'archetype-corner-public',
+  },
   {
     id: 'living-open',
     category: 'indoor-living',
@@ -494,7 +552,8 @@ export const CARDS: CardDef[] = [
       ctx.selections.archetype !== 'archetype-corner-residential' &&
       ctx.selections.archetype !== 'archetype-live-work' &&
       ctx.selections.archetype !== 'archetype-mixed-use-lowrise' &&
-      ctx.selections.archetype !== 'archetype-stacked-roles',
+      ctx.selections.archetype !== 'archetype-stacked-roles' &&
+      ctx.selections.archetype !== 'archetype-corner-public',
   },
   {
     id: 'living-work',
@@ -517,7 +576,8 @@ export const CARDS: CardDef[] = [
       ctx.selections.archetype !== 'archetype-corner-residential' &&
       ctx.selections.archetype !== 'archetype-live-work' &&
       ctx.selections.archetype !== 'archetype-mixed-use-lowrise' &&
-      ctx.selections.archetype !== 'archetype-stacked-roles',
+      ctx.selections.archetype !== 'archetype-stacked-roles' &&
+      ctx.selections.archetype !== 'archetype-corner-public',
   },
 
   // --- sleeping (fill, upper level) ---
@@ -629,6 +689,50 @@ export const CARDS: CardDef[] = [
     tradeoff: 'Replacing the third bedroom with a study gives more space between the two sleeping rooms.',
     availableWhen: (ctx) => ctx.selections.archetype === 'archetype-stacked-roles',
   },
+  // Corner-public specific: composite card fills upper (home day zone) and
+  // level2plus (home sleep zone) from a single resolveCard('sleeping') call.
+  // Uses the corner-residential sleeping geometry: cols 0, 1, 3 (spine at col 2).
+  {
+    id: 'sleeping-cp-three-bed',
+    category: 'sleeping',
+    title: 'Living above the public floor, three bedrooms at the top',
+    blurb:
+      'An open living room, kitchen and dining area fill the home floor above the public space. Three bedrooms and a bathroom sit at the top for a private night away from the street.',
+    tiers: ['pro'],
+    params: {},
+    cellOps: [
+      { addr: { col: 0, band: 0 }, fill: { kind: 'living', label: 'Living' }, levels: ['upper'] },
+      { addr: { col: 1, band: 0 }, fill: { kind: 'dining', label: 'Dining' }, levels: ['upper'] },
+      { addr: { col: 3, band: 0 }, fill: { kind: 'kitchen', label: 'Kitchen' }, levels: ['upper'] },
+      { addr: { col: 0, band: 1 }, fill: { kind: 'living', label: 'Family Room' }, levels: ['upper'] },
+      { addr: { col: 0, band: 0 }, fill: { kind: 'master', label: 'Main Bedroom' }, levels: ['level2plus'] },
+      { addr: { col: 1, band: 0 }, fill: { kind: 'bedroom', label: 'Bedroom 2' }, levels: ['level2plus'] },
+      { addr: { col: 3, band: 0 }, fill: { kind: 'bath', label: 'Bathroom' }, levels: ['level2plus'] },
+      { addr: { col: 0, band: 1 }, fill: { kind: 'bedroom', label: 'Bedroom 3' }, levels: ['level2plus'] },
+    ],
+    availableWhen: (ctx) => ctx.selections.archetype === 'archetype-corner-public',
+  },
+  {
+    id: 'sleeping-cp-two-bed',
+    category: 'sleeping',
+    title: 'Living above the public floor, two bedrooms and a study at the top',
+    blurb:
+      'An open living room, kitchen and dining area fill the home floor. Two bedrooms, a bathroom and a quiet study sit at the top — useful for working from home or as a guest room.',
+    tiers: ['pro'],
+    params: {},
+    cellOps: [
+      { addr: { col: 0, band: 0 }, fill: { kind: 'living', label: 'Living' }, levels: ['upper'] },
+      { addr: { col: 1, band: 0 }, fill: { kind: 'dining', label: 'Dining' }, levels: ['upper'] },
+      { addr: { col: 3, band: 0 }, fill: { kind: 'kitchen', label: 'Kitchen' }, levels: ['upper'] },
+      { addr: { col: 0, band: 1 }, fill: { kind: 'living', label: 'Family Room' }, levels: ['upper'] },
+      { addr: { col: 0, band: 0 }, fill: { kind: 'master', label: 'Main Bedroom' }, levels: ['level2plus'] },
+      { addr: { col: 1, band: 0 }, fill: { kind: 'bedroom', label: 'Bedroom 2' }, levels: ['level2plus'] },
+      { addr: { col: 3, band: 0 }, fill: { kind: 'bath', label: 'Bathroom' }, levels: ['level2plus'] },
+      { addr: { col: 0, band: 1 }, fill: { kind: 'work', label: 'Study' }, levels: ['level2plus'] },
+    ],
+    tradeoff: 'Replacing the third bedroom with a study gives each sleeping room more space.',
+    availableWhen: (ctx) => ctx.selections.archetype === 'archetype-corner-public',
+  },
   // Mixed-use-lowrise specific: each upper level is a separate self-contained flat.
   // The composite sleeping card fills both 'upper' (Flat 1) and 'level2plus' (Flat 2)
   // with identical arrangements — one call, two complete homes.
@@ -728,7 +832,8 @@ export const CARDS: CardDef[] = [
       ctx.selections.archetype !== 'archetype-corner-residential' &&
       ctx.selections.archetype !== 'archetype-live-work' &&
       ctx.selections.archetype !== 'archetype-mixed-use-lowrise' &&
-      ctx.selections.archetype !== 'archetype-stacked-roles',
+      ctx.selections.archetype !== 'archetype-stacked-roles' &&
+      ctx.selections.archetype !== 'archetype-corner-public',
   },
   {
     id: 'sleeping-guest',
@@ -749,7 +854,8 @@ export const CARDS: CardDef[] = [
       ctx.selections.archetype !== 'archetype-corner-residential' &&
       ctx.selections.archetype !== 'archetype-live-work' &&
       ctx.selections.archetype !== 'archetype-mixed-use-lowrise' &&
-      ctx.selections.archetype !== 'archetype-stacked-roles',
+      ctx.selections.archetype !== 'archetype-stacked-roles' &&
+      ctx.selections.archetype !== 'archetype-corner-public',
   },
 
   // Corner-residential specific: spine at col 2 means bedrooms fill cols 0-1 and col 3.
@@ -798,7 +904,9 @@ export const CARDS: CardDef[] = [
     cellOps: [
       { addr: { col: 2, band: 1 }, fill: { kind: 'circulation', label: 'Stair' }, levels: ['ground', 'upper'] },
     ],
-    availableWhen: (ctx) => ctx.selections.archetype === 'archetype-corner-residential',
+    availableWhen: (ctx) =>
+      ctx.selections.archetype === 'archetype-corner-residential' ||
+      ctx.selections.archetype === 'archetype-corner-public',
   },
   {
     id: 'stair-rear-cr',
@@ -810,7 +918,9 @@ export const CARDS: CardDef[] = [
     cellOps: [
       { addr: { col: 2, band: 2 }, fill: { kind: 'circulation', label: 'Stair' }, levels: ['ground', 'upper'] },
     ],
-    availableWhen: (ctx) => ctx.selections.archetype === 'archetype-corner-residential',
+    availableWhen: (ctx) =>
+      ctx.selections.archetype === 'archetype-corner-residential' ||
+      ctx.selections.archetype === 'archetype-corner-public',
   },
   {
     id: 'stair-central',
@@ -822,7 +932,9 @@ export const CARDS: CardDef[] = [
     cellOps: [
       { addr: { col: 1, band: 1 }, fill: { kind: 'circulation', label: 'Stair' }, levels: ['ground', 'upper'] },
     ],
-    availableWhen: (ctx) => ctx.selections.archetype !== 'archetype-corner-residential',
+    availableWhen: (ctx) =>
+      ctx.selections.archetype !== 'archetype-corner-residential' &&
+      ctx.selections.archetype !== 'archetype-corner-public',
   },
   {
     id: 'stair-rear',
@@ -834,7 +946,9 @@ export const CARDS: CardDef[] = [
     cellOps: [
       { addr: { col: 1, band: 2 }, fill: { kind: 'circulation', label: 'Stair' }, levels: ['ground', 'upper'] },
     ],
-    availableWhen: (ctx) => ctx.selections.archetype !== 'archetype-corner-residential',
+    availableWhen: (ctx) =>
+      ctx.selections.archetype !== 'archetype-corner-residential' &&
+      ctx.selections.archetype !== 'archetype-corner-public',
   },
 
   // --- forecourt (fill) ---
@@ -871,6 +985,18 @@ export const CARDS: CardDef[] = [
     cellOps: [],
     availableWhen: (ctx) => ctx.selections.archetype === 'archetype-live-work',
   },
+  // Corner-public specific: the commercial floor fills the full ground front;
+  // the forecourt step is a no-op.
+  {
+    id: 'forecourt-cp-frontage',
+    category: 'forecourt',
+    title: 'Public frontage at the corner',
+    blurb: 'The public space addresses both streets at once — the corner entry is the building\'s front face.',
+    tiers: ['pro'],
+    params: {},
+    cellOps: [],
+    availableWhen: (ctx) => ctx.selections.archetype === 'archetype-corner-public',
+  },
   {
     id: 'forecourt-garden',
     category: 'forecourt',
@@ -882,7 +1008,8 @@ export const CARDS: CardDef[] = [
     availableWhen: (ctx) =>
       ctx.selections.archetype !== 'archetype-corner-residential' &&
       ctx.selections.archetype !== 'archetype-live-work' &&
-      ctx.selections.archetype !== 'archetype-mixed-use-lowrise',
+      ctx.selections.archetype !== 'archetype-mixed-use-lowrise' &&
+      ctx.selections.archetype !== 'archetype-corner-public',
   },
   {
     id: 'forecourt-court',
@@ -895,11 +1022,13 @@ export const CARDS: CardDef[] = [
     availableWhen: (ctx) =>
       ctx.selections.archetype !== 'archetype-corner-residential' &&
       ctx.selections.archetype !== 'archetype-live-work' &&
-      ctx.selections.archetype !== 'archetype-mixed-use-lowrise',
+      ctx.selections.archetype !== 'archetype-mixed-use-lowrise' &&
+      ctx.selections.archetype !== 'archetype-corner-public',
   },
 
   // --- rear-terrace (fill) ---
-  // Corner-residential: inner-garden strip at (0,2),(1,2) — private rear face.
+  // Corner-residential and corner-public share the same rear geometry:
+  // inner-garden strip at (0,2),(1,2) — private rear face away from both streets.
   {
     id: 'terrace-cr-garden',
     category: 'rear-terrace',
@@ -911,7 +1040,9 @@ export const CARDS: CardDef[] = [
       { addr: { col: 0, band: 2 }, fill: { kind: 'outdoor-room', label: 'Rear Garden' } },
       { addr: { col: 1, band: 2 }, fill: { kind: 'outdoor-room', label: 'Rear Garden' } },
     ],
-    availableWhen: (ctx) => ctx.selections.archetype === 'archetype-corner-residential',
+    availableWhen: (ctx) =>
+      ctx.selections.archetype === 'archetype-corner-residential' ||
+      ctx.selections.archetype === 'archetype-corner-public',
   },
   {
     id: 'terrace-cr-standard',
@@ -924,7 +1055,9 @@ export const CARDS: CardDef[] = [
       { addr: { col: 0, band: 2 }, fill: { kind: 'outdoor-room', label: 'Rear Terrace' } },
       { addr: { col: 1, band: 2 }, fill: { kind: 'outdoor-room', label: 'Rear Terrace' } },
     ],
-    availableWhen: (ctx) => ctx.selections.archetype === 'archetype-corner-residential',
+    availableWhen: (ctx) =>
+      ctx.selections.archetype === 'archetype-corner-residential' ||
+      ctx.selections.archetype === 'archetype-corner-public',
   },
 
   // Narrow-lot specific: only one rear cell (col 2, band 2) — no col 3.
@@ -965,7 +1098,8 @@ export const CARDS: CardDef[] = [
     ],
     availableWhen: (ctx) =>
       ctx.selections.archetype !== 'archetype-narrow-lot' &&
-      ctx.selections.archetype !== 'archetype-corner-residential',
+      ctx.selections.archetype !== 'archetype-corner-residential' &&
+      ctx.selections.archetype !== 'archetype-corner-public',
   },
   {
     id: 'terrace-garden',
@@ -980,7 +1114,8 @@ export const CARDS: CardDef[] = [
     ],
     availableWhen: (ctx) =>
       ctx.selections.archetype !== 'archetype-narrow-lot' &&
-      ctx.selections.archetype !== 'archetype-corner-residential',
+      ctx.selections.archetype !== 'archetype-corner-residential' &&
+      ctx.selections.archetype !== 'archetype-corner-public',
   },
 
   // --- outdoor-rooms (fill) ---
@@ -995,6 +1130,28 @@ export const CARDS: CardDef[] = [
     params: {},
     cellOps: [{ addr: { col: 3, band: 1 }, fill: { kind: 'living', label: 'Sitting Room' } }],
     availableWhen: (ctx) => ctx.selections.archetype === 'archetype-corner-residential',
+  },
+  // Corner-public specific: (3,1) faces the side street on the commercial floor.
+  {
+    id: 'outdoor-rooms-cp-seating',
+    category: 'outdoor-rooms',
+    title: 'Outdoor seating beside the public space',
+    blurb: 'A covered outdoor seating area beside the commercial floor spills onto the side street — a quieter spot away from the main frontage.',
+    tiers: ['pro'],
+    params: {},
+    cellOps: [{ addr: { col: 3, band: 1 }, fill: { kind: 'outdoor-room', label: 'Outdoor Seating' } }],
+    availableWhen: (ctx) => ctx.selections.archetype === 'archetype-corner-public',
+  },
+  {
+    id: 'outdoor-rooms-cp-studio',
+    category: 'outdoor-rooms',
+    title: 'Extra studio or storage room',
+    blurb: 'An extra room beside the main public space gives the tenancy a private back-of-house area — useful for storage, an office or a secondary work room.',
+    tiers: ['pro'],
+    params: {},
+    cellOps: [{ addr: { col: 3, band: 1 }, fill: { kind: 'work', label: 'Studio' } }],
+    tradeoff: 'The extra room replaces the outdoor seating, keeping this part of the building fully indoors.',
+    availableWhen: (ctx) => ctx.selections.archetype === 'archetype-corner-public',
   },
   // Stacked-roles specific: (3,1) on ground is the parents' dining room (set by
   // indoor-living). This no-op prevents generic cards from overwriting it at step 7.
@@ -1065,7 +1222,8 @@ export const CARDS: CardDef[] = [
       ctx.selections.archetype !== 'archetype-corner-residential' &&
       ctx.selections.archetype !== 'archetype-live-work' &&
       ctx.selections.archetype !== 'archetype-mixed-use-lowrise' &&
-      ctx.selections.archetype !== 'archetype-stacked-roles',
+      ctx.selections.archetype !== 'archetype-stacked-roles' &&
+      ctx.selections.archetype !== 'archetype-corner-public',
   },
   {
     id: 'outdoor-rooms-deck',
@@ -1081,7 +1239,8 @@ export const CARDS: CardDef[] = [
       ctx.selections.archetype !== 'archetype-narrow-lot' &&
       ctx.selections.archetype !== 'archetype-live-work' &&
       ctx.selections.archetype !== 'archetype-mixed-use-lowrise' &&
-      ctx.selections.archetype !== 'archetype-stacked-roles',
+      ctx.selections.archetype !== 'archetype-stacked-roles' &&
+      ctx.selections.archetype !== 'archetype-corner-public',
   },
 
   // --- upper-terrace (fill) ---
@@ -1173,6 +1332,36 @@ export const CARDS: CardDef[] = [
     tradeoff: 'A balcony is smaller than a full terrace but leaves more room inside the flat.',
     availableWhen: (ctx) => ctx.selections.archetype === 'archetype-mixed-use-lowrise',
   },
+  // Corner-public specific: upper-terrace must fill both 'upper' (home day floor)
+  // and 'level2plus' (home sleep floor) since both have an upper-terrace slot at
+  // (3,1) and (3,2) facing the side street.
+  {
+    id: 'upper-terrace-cp-open',
+    category: 'upper-terrace',
+    title: 'Terrace on the home floor and roof terrace above',
+    blurb: 'A private terrace off the living area on the home floor, and a quieter roof terrace above the bedrooms — both facing away from the street.',
+    tiers: ['pro'],
+    params: {},
+    cellOps: [
+      { addr: { col: 3, band: 1 }, fill: { kind: 'outdoor-room', label: 'Terrace' }, levels: ['upper', 'level2plus'] },
+      { addr: { col: 3, band: 2 }, fill: { kind: 'outdoor-room', label: 'Terrace' }, levels: ['upper', 'level2plus'] },
+    ],
+    availableWhen: (ctx) => ctx.selections.archetype === 'archetype-corner-public',
+  },
+  {
+    id: 'upper-terrace-cp-balcony',
+    category: 'upper-terrace',
+    title: 'Balcony on each home floor',
+    blurb: 'A narrow balcony on each of the two home floors keeps the plan compact while still giving each level its own outdoor connection.',
+    tiers: ['pro'],
+    params: {},
+    cellOps: [
+      { addr: { col: 3, band: 1 }, fill: { kind: 'outdoor-room', label: 'Balcony' }, levels: ['upper', 'level2plus'] },
+      { addr: { col: 3, band: 2 }, fill: { kind: 'outdoor-room', label: 'Balcony' }, levels: ['upper', 'level2plus'] },
+    ],
+    tradeoff: 'A balcony is smaller than a full terrace but leaves more room inside each floor.',
+    availableWhen: (ctx) => ctx.selections.archetype === 'archetype-corner-public',
+  },
   // Stacked-roles specific: upper-terrace must fill both 'upper' (family day floor)
   // and 'level2plus' (family sleep floor) since both have an upper-terrace slot at
   // (3,1) and (3,2).
@@ -1218,7 +1407,8 @@ export const CARDS: CardDef[] = [
       ctx.selections.archetype !== 'archetype-narrow-lot' &&
       ctx.selections.archetype !== 'archetype-live-work' &&
       ctx.selections.archetype !== 'archetype-mixed-use-lowrise' &&
-      ctx.selections.archetype !== 'archetype-stacked-roles',
+      ctx.selections.archetype !== 'archetype-stacked-roles' &&
+      ctx.selections.archetype !== 'archetype-corner-public',
   },
   {
     id: 'upper-terrace-studio',
@@ -1236,7 +1426,8 @@ export const CARDS: CardDef[] = [
       ctx.selections.archetype !== 'archetype-narrow-lot' &&
       ctx.selections.archetype !== 'archetype-live-work' &&
       ctx.selections.archetype !== 'archetype-mixed-use-lowrise' &&
-      ctx.selections.archetype !== 'archetype-stacked-roles',
+      ctx.selections.archetype !== 'archetype-stacked-roles' &&
+      ctx.selections.archetype !== 'archetype-corner-public',
   },
 
   // --- palette (fill) ---

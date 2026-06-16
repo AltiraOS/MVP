@@ -812,6 +812,142 @@ export const stackedRolesParti: Parti = {
   ],
 }
 
+// The corner-public parti: a four-bay-wide, three-storey skeleton for a corner
+// lot where the ground floor is an active public or commercial use (café, gallery,
+// office) and the two floors above form a complete private home for the owner.
+// The spine shifts to col 2 — same as corner-residential — keeping the corner
+// entry shared between the commercial lobby and the private stair.
+//
+// Distinct from:
+//   corner-residential — two floors, wholly residential, corner lot
+//   live-work          — spine at col 1; studio fronts one street, not the corner
+//   mixed-use-lowrise  — two separate investment flats above; no owner-occupier home
+//
+//            col0 (public)   col1 (public)  col2 (spine)    col3 (side-street)
+// ground:
+// band0      café / shop     café floor     corner lobby    display / reception
+// band1      back studio     rear office    hall            outdoor seating
+// band2      [unbuilt]       [unbuilt]      hall / stair    services
+//
+// upper (home day zone):
+// band0      living room     dining room    landing         kitchen
+// band1      family room     [unbuilt]      hall            terrace
+// band2      [unbuilt]       [unbuilt]      hall            terrace
+//
+// level2plus (home sleep zone):
+// band0      main bedroom    bedroom 2      landing         bathroom
+// band1      bedroom 3       [unbuilt]      hall            roof terrace
+// band2      [unbuilt]       [unbuilt]      hall            roof terrace
+export const cornerPublicParti: Parti = {
+  id: 'corner-public',
+  bayCount: 4,
+  bandCount: 3,
+  bandRatios: [0.30, 0.38, 0.32],
+  spineCol: 2,
+  groundFloorToFloorM: 4.2,
+  groundBaseElevationM: 0,
+  fixed: [
+    { addr: { col: 2, band: 0 }, fill: { kind: 'circulation', label: 'Corner Lobby' } },
+    { addr: { col: 2, band: 1 }, fill: { kind: 'circulation', label: 'Hall' } },
+    { addr: { col: 2, band: 2 }, fill: { kind: 'circulation', label: 'Hall' } },
+    { addr: { col: 3, band: 2 }, fill: { kind: 'service', label: 'Services' } },
+  ],
+  openCandidates: [],
+  slots: [
+    {
+      category: 'indoor-living',
+      targets: [
+        { col: 0, band: 0 },
+        { col: 1, band: 0 },
+        { col: 3, band: 0 },
+        { col: 0, band: 1 },
+        { col: 1, band: 1 },
+      ],
+    },
+    { category: 'outdoor-rooms', targets: [{ col: 3, band: 1 }] },
+    {
+      category: 'rear-terrace',
+      targets: [
+        { col: 0, band: 2 },
+        { col: 1, band: 2 },
+      ],
+    },
+    { category: 'spine-stair', targets: [{ col: 2, band: 1 }, { col: 2, band: 2 }] },
+  ],
+  levels: [
+    // Owner's home — day zone: living, kitchen, dining
+    {
+      id: 'upper',
+      floorToFloorM: 3.0,
+      baseElevationM: 4.2,
+      fixed: [
+        { addr: { col: 2, band: 0 }, fill: { kind: 'circulation', label: 'Landing' } },
+        { addr: { col: 2, band: 1 }, fill: { kind: 'circulation', label: 'Hall' } },
+        { addr: { col: 2, band: 2 }, fill: { kind: 'circulation', label: 'Hall' } },
+      ],
+      slots: [
+        {
+          category: 'sleeping',
+          targets: [
+            { col: 0, band: 0 },
+            { col: 1, band: 0 },
+            { col: 3, band: 0 },
+            { col: 0, band: 1 },
+          ],
+        },
+        {
+          category: 'upper-terrace',
+          targets: [
+            { col: 3, band: 1 },
+            { col: 3, band: 2 },
+          ],
+        },
+        { category: 'spine-stair', targets: [{ col: 2, band: 1 }, { col: 2, band: 2 }] },
+      ],
+      unbuilt: [
+        { col: 0, band: 2 },
+        { col: 1, band: 1 },
+        { col: 1, band: 2 },
+      ],
+    },
+    // Owner's home — sleep zone: bedrooms
+    {
+      id: 'level2plus',
+      floorToFloorM: 2.8,
+      baseElevationM: 7.2,
+      fixed: [
+        { addr: { col: 2, band: 0 }, fill: { kind: 'circulation', label: 'Landing' } },
+        { addr: { col: 2, band: 1 }, fill: { kind: 'circulation', label: 'Hall' } },
+        { addr: { col: 2, band: 2 }, fill: { kind: 'circulation', label: 'Hall' } },
+      ],
+      slots: [
+        {
+          category: 'sleeping',
+          targets: [
+            { col: 0, band: 0 },
+            { col: 1, band: 0 },
+            { col: 3, band: 0 },
+            { col: 0, band: 1 },
+          ],
+        },
+        {
+          category: 'upper-terrace',
+          targets: [
+            { col: 3, band: 1 },
+            { col: 3, band: 2 },
+          ],
+        },
+        { category: 'spine-stair', targets: [{ col: 2, band: 1 }, { col: 2, band: 2 }] },
+      ],
+      unbuilt: [
+        { col: 0, band: 2 },
+        { col: 1, band: 1 },
+        { col: 1, band: 2 },
+      ],
+    },
+  ],
+}
+
 export const PARTIS: Record<string, Parti> = {
   'family-courtyard': familyCourtyardParti,
   'dual-key': dualKeyParti,
@@ -821,4 +957,5 @@ export const PARTIS: Record<string, Parti> = {
   'live-work': liveWorkParti,
   'mixed-use-lowrise': mixedUseLowriseParti,
   'stacked-roles': stackedRolesParti,
+  'corner-public': cornerPublicParti,
 }
