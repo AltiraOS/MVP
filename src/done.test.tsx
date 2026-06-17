@@ -62,7 +62,8 @@ for (const [partiId] of Object.entries(PARTIS)) {
       const brief: BriefAnswers = { ...DEFAULT_BRIEF, householdName: 'Sample House' }
       const concept = assembleConcept(brief, baseSelections)
 
-      expect(concept.stair.col).toBe(concept.spine.col)
+      expect(concept.stair.xM).toBeGreaterThanOrEqual(concept.spine.xM)
+      expect(concept.stair.xM).toBeLessThan(concept.spine.xM + concept.spine.widthM)
 
       render(<ConceptDeliverable concept={concept} />)
 
@@ -159,7 +160,8 @@ describe('family-courtyard: specific selection combos render a complete delivera
   for (const [label, selections] of Object.entries(combos)) {
     it(`renders: ${label}`, () => {
       const concept = assembleConcept(brief, selections)
-      expect(concept.stair.col).toBe(concept.spine.col)
+      expect(concept.stair.xM).toBeGreaterThanOrEqual(concept.spine.xM)
+      expect(concept.stair.xM).toBeLessThan(concept.spine.xM + concept.spine.widthM)
 
       render(<ConceptDeliverable concept={concept} />)
 

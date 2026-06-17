@@ -97,7 +97,7 @@ export function StreetMark({ x, y, widthM }: { x: number; y: number; widthM: num
 
 // A dimension string between two points: an extension line with end ticks
 // and a centred label. Purely additive over geometry already computed
-// elsewhere (gridBoundsM, grid.bayWidthM, bandDepthsM, slab heights) —
+// elsewhere (boardBoundsM, board.colWidthM, bandDepthsM, slab heights) —
 // it never works out a position itself.
 export function DimensionLine({
   x1,

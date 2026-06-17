@@ -14,7 +14,7 @@ import type { Parti } from './types'
 // are left unbuilt, reading as roof/terrace below the upper outline.
 export const familyCourtyardParti: Parti = {
   id: 'family-courtyard',
-  bayCount: 4,
+  colCount: 4,
   bandCount: 3,
   bandRatios: [0.32, 0.36, 0.32],
   spineCol: 1,
@@ -105,7 +105,7 @@ export const familyCourtyardParti: Parti = {
 // band2      [unbuilt]      hall            [unbuilt]        terrace
 export const dualKeyParti: Parti = {
   id: 'dual-key',
-  bayCount: 4,
+  colCount: 4,
   bandCount: 3,
   bandRatios: [0.33, 0.34, 0.33],
   spineCol: 1,
@@ -194,7 +194,7 @@ export const dualKeyParti: Parti = {
 // band2      [unbuilt]          hall            [unbuilt]      terrace
 export const intergenerationalParti: Parti = {
   id: 'intergenerational',
-  bayCount: 4,
+  colCount: 4,
   bandCount: 3,
   bandRatios: [0.30, 0.42, 0.28],
   spineCol: 1,
@@ -278,7 +278,7 @@ export const intergenerationalParti: Parti = {
 // Upper: band2/col0 is unbuilt (reads as rear eave); col2 upper terrace.
 export const narrowLotParti: Parti = {
   id: 'narrow-lot',
-  bayCount: 3,
+  colCount: 3,
   bandCount: 3,
   bandRatios: [0.28, 0.44, 0.28],
   spineCol: 1,
@@ -354,7 +354,7 @@ export const narrowLotParti: Parti = {
 // Upper-terrace reads toward the side street at (3,1)/(3,2).
 export const cornerResidentialParti: Parti = {
   id: 'corner-residential',
-  bayCount: 4,
+  colCount: 4,
   bandCount: 3,
   bandRatios: [0.30, 0.38, 0.32],
   spineCol: 2,
@@ -442,7 +442,7 @@ export const cornerResidentialParti: Parti = {
 // col 2 band 1, col 0+2 band 2 are unbuilt on both upper levels.
 export const liveWorkParti: Parti = {
   id: 'live-work',
-  bayCount: 4,
+  colCount: 4,
   bandCount: 3,
   bandRatios: [0.30, 0.38, 0.32],
   spineCol: 1,
@@ -564,7 +564,7 @@ export const liveWorkParti: Parti = {
 // footprint: living / kitchen / bedroom(s) fill cols 0, 2, 3.
 export const mixedUseLowriseParti: Parti = {
   id: 'mixed-use-lowrise',
-  bayCount: 4,
+  colCount: 4,
   bandCount: 3,
   bandRatios: [0.30, 0.38, 0.32],
   spineCol: 1,
@@ -701,7 +701,7 @@ export const mixedUseLowriseParti: Parti = {
 // band2      [unbuilt]          hall           [unbuilt]         roof terrace
 export const stackedRolesParti: Parti = {
   id: 'stacked-roles',
-  bayCount: 4,
+  colCount: 4,
   bandCount: 3,
   bandRatios: [0.30, 0.40, 0.30],
   spineCol: 1,
@@ -840,7 +840,7 @@ export const stackedRolesParti: Parti = {
 // band2      [unbuilt]       [unbuilt]      hall            roof terrace
 export const cornerPublicParti: Parti = {
   id: 'corner-public',
-  bayCount: 4,
+  colCount: 4,
   bandCount: 3,
   bandRatios: [0.30, 0.38, 0.32],
   spineCol: 2,

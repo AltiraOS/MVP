@@ -32,8 +32,9 @@ describe('PlanView', () => {
     const treads = stairGroup?.querySelectorAll('line') ?? []
     expect(treads.length).toBe(5)
 
-    // The stair sits on the spine column.
-    expect(concept.stair.col).toBe(concept.spine.col)
+    // The stair sits on the spine.
+    expect(concept.stair.xM).toBeGreaterThanOrEqual(concept.spine.xM)
+    expect(concept.stair.xM).toBeLessThan(concept.spine.xM + concept.spine.widthM)
   })
 
   it('shows north and street marks, and a scale bar', () => {
@@ -50,7 +51,7 @@ describe('PlanView', () => {
     render(<PlanView concept={concept} />)
 
     const ground = concept.levels.find((l) => l.id === 'ground')!
-    const cellCount = Object.keys(ground.assignments).length
+    const cellCount = ground.placements.filter((p) => p.fill).length
     const texts = document.querySelectorAll('svg text[dominant-baseline="middle"]')
     expect(texts.length).toBe(cellCount)
 
@@ -101,12 +102,13 @@ describe('PlanView', () => {
     const dimensions = document.querySelector('[aria-label="Dimensions"]')
     expect(dimensions).not.toBeNull()
 
-    // One overall width dimension, one per bay column, one per band.
+    // One overall width dimension, one per column, one per band.
     const dimensionLines = dimensions?.querySelectorAll('[aria-label^="Dimension:"]') ?? []
-    expect(dimensionLines.length).toBe(1 + resolved.grid.bayCount + resolved.grid.bandCount)
+    expect(dimensionLines.length).toBe(1 + resolved.board.colCount + resolved.board.bandCount)
 
     // Stair-on-spine and courtyard-open still hold with dimensions on.
     expect(document.querySelector('[aria-label="Stair"]')).not.toBeNull()
-    expect(resolved.stair.col).toBe(resolved.spine.col)
+    expect(resolved.stair.xM).toBeGreaterThanOrEqual(resolved.spine.xM)
+    expect(resolved.stair.xM).toBeLessThan(resolved.spine.xM + resolved.spine.widthM)
   })
 })

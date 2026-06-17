@@ -28,8 +28,8 @@ export interface SectionViewProps {
 // air through the full height of the building, and the stair connecting
 // the levels.
 export function SectionView({ concept, className, highlight, dimensioned }: SectionViewProps) {
-  const { levels, spine, stair, palette, title } = concept
-  const widthM = sectionWidthM(concept.grid)
+  const { levels, stair, palette, title } = concept
+  const widthM = sectionWidthM(concept.board)
   const { slabZs, roofTopM } = sectionHeightsM(concept)
   const segments = sectionSegmentsM(concept)
   const highlightKeys = highlight ? new Set(highlight.map(cellKey)) : null
@@ -43,7 +43,7 @@ export function SectionView({ concept, className, highlight, dimensioned }: Sect
   const yFor = (z: number) => roofTopM - z
 
   const stairSeg = segments.find(
-    (seg) => seg.addr.col === spine.col && seg.addr.band === stair.band,
+    (seg) => seg.addr.col === stair.colStart && seg.addr.band === stair.bandStart,
   )
   const stairRiseM = slabZs[slabZs.length - 1] ?? roofTopM
   const stairPoints: string[] = []

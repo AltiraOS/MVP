@@ -25,7 +25,7 @@ describe('resolveOnSite', () => {
     expect(baseline.siteM.frontageM).not.toBe(a.siteM.frontageM)
   })
 
-  it('re-resolves the bay grid in metres against the real site', () => {
+  it('re-resolves the board in metres against the real site', () => {
     const site: SiteCapture = {
       frontageM: 20,
       depthM: 40,
@@ -37,7 +37,7 @@ describe('resolveOnSite', () => {
     expect(resolved.siteM.frontageM).toBe(20)
     expect(resolved.siteM.depthM).toBe(40)
     const usableFrontageM = 20 - 2 * 1.5
-    expect(resolved.grid.bayWidthM).toBeCloseTo(usableFrontageM / resolved.grid.bayCount, 5)
+    expect(resolved.board.colWidthM).toBeCloseTo(usableFrontageM / resolved.board.colCount, 5)
   })
 
   it('keeps the concept valid (stair on spine, courtyard open) after resolving', () => {

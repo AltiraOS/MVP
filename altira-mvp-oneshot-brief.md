@@ -24,12 +24,17 @@ why in plain language.
 
 ## 2. Non-negotiable architecture (the spine)
 
-**A. One source of truth: the bay grid.**
-The house is organized into **bays** — columns across the lot frontage and depth bands
-front-to-back. Every element in the building is located by a **bay address**
-`(col, band)`, never by pixel coordinates. Bay size is **derived from site meters**, never
-hardcoded. All levels share the same columns. Both renderers and all card thumbnails read
-this one grid.
+**A. One source of truth: the 1m board.**
+The site is organized into a **board**: `widthM` columns × `depthM` rows, each cell exactly
+1m × 1m. The 1m grid is internal measurement and snapping precision only — it is **never**
+exposed to the customer as free placement. Depth is organized in fixed **4m bands**,
+front-to-back (`bandIndex = floor(yM / 4)`); width comes from the site frontage. Every
+element in the building is located by a **card placement** in metres —
+`{ cardId, level, xM, yM, widthM, depthM, bandStart, bandSpan }` — never by pixel
+coordinates. The design grammar stays card-based: cards have fixed metre dimensions and may
+span several 1m cells, but the customer places cards, never individual cells. All levels
+share the same board. Both renderers and all card thumbnails read this one board, drawing
+only from placed cards — never inventing geometry.
 
 **B. One model → pure renderers.**
 A single `ConceptModel` (built deterministically) is the only input to `PlanView` and
@@ -43,14 +48,16 @@ byte-identical output. No `Math.random`, no reliance on object-key order, no sha
 state across pipeline steps. This is what makes it testable and stable.
 
 **D. Cards are intent, not drawing.**
-A card never draws or positions a rectangle. It **fills or modifies a bay cell** (or sets a
-parameter like palette). Placement is resolved by the assembler against the parti, not by
-the card.
+A card never draws or positions a rectangle. It has a **fixed footprint in metres**
+(`widthM` × `depthM`, usually a whole number of 4m bands deep) and carries a fill or
+parameter (like palette). Placement is resolved by the assembler against the parti's
+allowed slots, not by the card.
 
 **E. Parti skeletons give the bones.**
-Each archetype maps to a hand-tuned **parti**: bay count, band proportions, and which cells
-are structure / spine / open. Cards fill the parti’s cells. The customer inherits
-architect-quality proportions for free; cards vary the fill, not the skeleton.
+Each archetype maps to a hand-tuned **parti**: a nominal board size, the fixed 4m band
+layout, a spine position, and which rectangles are structure / spine / open. Cards fill the
+parti's slots. The customer inherits architect-quality proportions for free; cards vary the
+fill, not the skeleton.
 
 -----
 
@@ -58,29 +65,32 @@ architect-quality proportions for free; cards vary the fill, not the skeleton.
 
 Do **not** reproduce these. Each has a one-line rule:
 
-1. **Bays in pixels.** → Bay width = `usableFrontageM / bayCount`, always in meters; pixels
-   only exist at render time via a single viewBox transform.
-1. **No single owner of cell assignment.** → Exactly one `BayGrid` with one
-   `assignments` map per level; a cell holds at most one form; assignment is resolved, not
+1. **Board positions in pixels.** → All placement is in metres on the 1m board; pixels
+   only exist at render time via a single viewBox transform. Never expose 1m cell editing
+   to the customer — the design grammar is fixed-size cards snapping to 4m bands.
+1. **No single owner of placement state.** → Exactly one `Board` with one
+   `placements` list per level; placements never overlap; assignment is resolved, not
    overwritten in a loop.
-1. **Renderers recomputing geometry.** → Renderers are pure read-only functions of
-   `ConceptModel`. No positioning math inside a renderer.
-1. **Stair placed by coordinate.** → Stair is a **cell on the spine column**:
-   `stair: CellAddr` where `stair.col === spine.col`. Assert it.
-1. **Courtyard as a filled room.** → Courtyard is a set of **open cells** cut as a **void
-   through every level** it touches. It is absence, not a block. It must read as open in
-   section.
-1. **Levels with independent grids.** → Upper levels inherit ground columns; only band
-   occupancy differs.
+1. **Renderers recomputing or inventing geometry.** → Renderers are pure read-only
+   functions of `ConceptModel`, drawing only from its placed cards. No positioning math
+   inside a renderer.
+1. **Stair placed off-spine.** → The stair's `CardPlacement.xM` must fall within the
+   spine's x-range (`spine.xM` to `spine.xM + spine.widthM`), on every level. Assert it.
+1. **Courtyard as a filled room.** → Courtyard is a **void rectangle** cut through **every
+   level** it touches — never a card placement with a fill. It is absence, not a block. It
+   must read as open in section.
+1. **Levels with independent boards.** → Upper levels share the same board (`widthM` /
+   `depthM` / band layout) as ground; only which cards are placed differs.
 1. **Determinism leaks.** → No randomness, no mutation of inputs, no key-order dependence.
 1. **Validation skipped.** → `validate()` runs at the end of assembly and asserts every
-   invariant in §5. The build is not done until these pass in tests.
+   invariant in §5 — including overlaps, boundaries, spine contact, courtyard voids, and
+   level stacking. The build is not done until these pass in tests.
 
 -----
 
 ## 4. Scope
 
-**In:** the 5-step journey; bay-grid model; parti library; card catalog; Core/Pro routing;
+**In:** the 5-step journey; 1m board + card-placement model; parti library; card catalog; Core/Pro routing;
 deterministic `assembleConcept`; `PlanView` + `SectionView`; card thumbnails rendered by
 the same renderers at small scale; the pre-fill-and-swap Shape UX; an on-screen concept
 deliverable; localStorage persistence.
@@ -98,15 +108,14 @@ deliverable; localStorage persistence.
 ## 5. Data model (concrete — build these types first)
 
 ```ts
-// --- the grid: the ONLY way to locate anything ---
-export interface BayGrid {
-  bayCount: number;            // columns across frontage
-  bandCount: number;           // depth bands front -> back
+// --- the board: the ONLY way to locate anything ---
+export interface Board {
+  widthM: number;         // columns across frontage, 1m each
+  depthM: number;         // rows front -> back, 1m each
   originM: { x: number; y: number };
-  bayWidthM: number;           // DERIVED = usableFrontageM / bayCount
-  bandDepthsM: number[];       // length === bandCount, sums to usable depth
+  bandDepthM: number;     // fixed: 4
+  bandCount: number;      // = Math.ceil(depthM / bandDepthM)
 }
-export interface CellAddr { col: number; band: number; }
 
 export type FormKind =
   | 'living' | 'kitchen' | 'dining' | 'master' | 'bedroom' | 'bath'
@@ -114,26 +123,38 @@ export type FormKind =
 
 export interface CellFill { kind: FormKind; label: string; } // Grade-8 label
 
+// A card placement: a fixed-size card occupying a metre rectangle on one level.
+// Cards may span several 1m cells; the customer never places individual cells.
+export interface CardPlacement {
+  cardId: string;
+  level: LevelId;
+  xM: number; yM: number;          // top-left, in metres, from board origin
+  widthM: number; depthM: number;  // the card's fixed footprint
+  bandStart: number;                // = Math.floor(yM / bandDepthM)
+  bandSpan: number;                 // number of 4m bands this placement crosses
+  fill?: CellFill;                  // omit for a void (courtyard) placement
+  void?: boolean;
+}
+
 export type LevelId = 'ground' | 'upper' | 'level1' | 'level2plus';
 export interface Level {
   id: LevelId;
   floorToFloorM: number;
   baseElevationM: number;
-  assignments: Record<string, CellFill>; // key = `${col}:${band}`; absent = unbuilt
-  voids: CellAddr[];                      // open-to-sky / double-height cells (courtyard)
+  placements: CardPlacement[];      // the only record of what's built on this level
 }
 
-export interface Spine { col: number; }   // spine runs down one bay column, all levels
+export interface Spine { xM: number; widthM: number; } // a strip street-to-rear, all levels
 export interface Concept {
   tier: 'core' | 'pro';
   archetypeId: string;
   siteM: { frontageM: number; depthM: number; northDeg: number;
            setbacks: { front: number; rear: number; side: number }; cornerLot: boolean; };
-  grid: BayGrid;
+  board: Board;
   levels: Level[];                         // ground first
   spine: Spine;
-  stair: CellAddr;                         // INVARIANT: stair.col === spine.col
-  courtyard?: CellAddr[];                  // open cells; appear in every level's voids
+  stair: CardPlacement;                    // INVARIANT: stair.xM within spine's x-range
+  courtyard?: { xM: number; yM: number; widthM: number; depthM: number }[]; // void rects; each appears on every level it spans
   palette: { name: string; wall: string; roof: string; ground: string; accent: string; };
 
   // explanatory (Grade 8), filled by assemble + validate:
@@ -142,13 +163,18 @@ export interface Concept {
 }
 
 // --- a parti: the curated skeleton ---
+export interface PartiSlot {
+  category: CardCategory;
+  targets: { xM: number; yM: number; widthM: number; depthM: number }[]; // allowed placement rects
+}
 export interface Parti {
-  id: string;                  // matches an archetype emphasis
-  bayCount: number; bandCount: number; bandRatios: number[];
-  spineCol: number;
-  fixed: { addr: CellAddr; fill: CellFill }[]; // structural / circulation cells
-  openCandidates: CellAddr[];  // where courtyards may sit
-  slots: { category: CardCategory; targets: CellAddr[] }[]; // which cells each category fills
+  id: string;                          // matches an archetype emphasis
+  widthM: number; depthM: number;      // nominal board this parti is tuned for
+  bandDepthM: number;                  // fixed: 4
+  spineXM: number; spineWidthM: number;
+  fixed: CardPlacement[];              // structural / circulation placements
+  openCandidates: { xM: number; yM: number; widthM: number; depthM: number }[]; // where courtyards may sit
+  slots: PartiSlot[];                  // which rects each category may place into
 }
 
 // --- a card: intent, not geometry ---
@@ -160,6 +186,7 @@ export interface CardDef {
   id: string; category: CardCategory;
   title: string; blurb: string;          // Grade-8, customer-facing
   tiers: ('core'|'pro')[];
+  widthM: number; depthM: number;        // the card's fixed footprint, in metres
   params: Record<string, number|string|boolean>; // interpreted by the assembler
   availableWhen?: (ctx: SelectionContext) => boolean;
 }
@@ -167,13 +194,13 @@ export interface CardDef {
 
 **Invariants `validate()` must assert** (failing test = unfinished build):
 
-- `stair.col === spine.col`.
-- Every courtyard cell is `kind:'open'` and present in **every** level’s `voids` it spans.
-- No cell has two fills on the same level.
-- All built cells lie within frontage × depth minus setbacks.
+- `stair.xM` falls within `[spine.xM, spine.xM + spine.widthM)`, on every level.
+- Every courtyard rect is cut as a void placement on **every** level it spans, never a fill.
+- No two placements overlap on the same level.
+- All built placements lie within frontage × depth minus setbacks.
 - Board is **complete**: no required category left unfilled (assembler inserts parti default
   - a warning instead of leaving a hole).
-- Pro ⇒ levels ≥ 3 **or** a `work`/`retail` cell exists.
+- Pro ⇒ levels ≥ 3 **or** a `work`/`retail` placement exists.
 
 -----
 
@@ -181,20 +208,24 @@ export interface CardDef {
 
 ```
 assembleConcept(brief, selections):
-  1. pick parti from archetype card -> grid (bayCount, bands), spineCol, fixed cells
-  2. set siteM from site card + brief; derive bayWidthM, bandDepthsM (METERS)
-  3. courtyard card  -> choose open cells from parti.openCandidates -> voids on all levels
-  4. indoor-living   -> fill ground slot cells
-  5. sleeping        -> fill upper/level slot cells
-  6. spine-stair     -> set stair cell on spineCol (assert on-spine)
-  7. forecourt / rear-terrace / outdoor-rooms / upper-terrace -> fill their slot cells
+  1. pick parti from archetype card -> nominal board size, spineXM, fixed placements
+  2. set siteM from site card + brief; create the 1m board (widthM, depthM) from site
+     meters; create fixed 4m depth bands (bandDepthM = 4)
+  3. courtyard card  -> choose an open rect from parti.openCandidates -> void placements
+     on all levels
+  4. indoor-living   -> place fixed-size cards into ground slot targets
+  5. sleeping        -> place fixed-size cards into upper/level slot targets
+  6. spine-stair     -> place the stair card within the spine's x-range (assert on-spine)
+  7. forecourt / rear-terrace / outdoor-rooms / upper-terrace -> place into their slot targets
   8. palette         -> colors
-  9. derive title/direction/layoutLogic/tradeoffs (Grade 8); validate()
+  9. derive title/direction/layoutLogic/tradeoffs (Grade 8);
+     validate() -> overlaps, boundaries, spine contact, courtyard voids, level stacking
   return concept
 ```
 
 Each step is `(concept, card, ctx) => concept`, pure. Later steps read earlier results.
-Missing card ⇒ parti default + warning, never a hole.
+Missing card ⇒ parti default + warning, never a hole. The renderer draws only from placed
+cards — it never invents geometry.
 
 -----
 
@@ -206,9 +237,10 @@ line-weight tokens (cut/structure 2px, secondary 1px, hairline 0.5px), monochrom
 - single accent fill, no shadows/gradients, always a scale bar.
 
 **PlanView** (top-down): site boundary; north mark rotated by `northDeg` + street arrow;
-setbacks (dashed hairline); built cells as poché walls by bay; courtyard cells as open void;
-spine line down `spine.col`; **stair drawn as treads in its cell on the spine**; zone labels
-in a collision-avoiding gutter; upper-level outline as a dashed overlay.
+setbacks (dashed hairline); built placements as poché walls drawn at their metre rectangle;
+courtyard rect as open void; spine line down `spine.xM`; **stair drawn as treads at its
+placement on the spine**; zone labels in a collision-avoiding gutter; upper-level outline as
+a dashed overlay.
 
 **SectionView** (cut along the spine column through the courtyard): floor slabs at correct
 elevations/heights; courtyard/void shown as open air between slabs; stair connecting levels
@@ -305,7 +337,7 @@ Add the remaining partis (one per archetype) and remaining cards once the
 ## 12. Definition of done
 
 A sample journey runs Brief → Activate without a blank slate or an error state; the board
-stays valid and complete throughout; Plan and Section are pure functions of one bay-grid
+stays valid and complete throughout; Plan and Section are pure functions of one board
 model and agree with each other; the stair sits on the spine; the courtyard reads as open in
 both views; card thumbnails are the same renderer at small scale; all §5 invariants and the
 copy-lint pass in tests.

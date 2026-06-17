@@ -23,8 +23,8 @@ describe('deriveSchedules', () => {
   it('produces one room-schedule row per built cell, matching the model', () => {
     const schedules = deriveSchedules(resolved)
     const ground = resolved.levels.find((l) => l.id === 'ground')!
-    const builtGroundCells = Object.values(ground.assignments).filter(
-      (f) => f.kind !== 'open' && f.kind !== 'outdoor-room',
+    const builtGroundCells = ground.placements.filter(
+      (p) => p.fill && p.fill.kind !== 'open' && p.fill.kind !== 'outdoor-room',
     )
     const groundRoomRows = schedules.rooms.filter((r) => r.level === 'ground')
     expect(groundRoomRows.length).toBe(builtGroundCells.length)

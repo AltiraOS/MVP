@@ -1,5 +1,4 @@
-import type { BayGrid, CellAddr, Concept } from '../model/types'
-import { bandOffsetM, cellKey } from '../model/grid'
+import type { Board, CellAddr, Concept } from '../model/types'
 
 export interface RectM {
   x: number
@@ -8,22 +7,13 @@ export interface RectM {
   h: number
 }
 
-// The metre-space rectangle for a single cell. This is the only place
-// (col, band) is turned into a position — everything else reads the result.
-export function cellRectM(grid: BayGrid, addr: CellAddr): RectM {
-  const x = grid.originM.x + addr.col * grid.bayWidthM
-  let y = grid.originM.y
-  for (let b = 0; b < addr.band; b++) y += grid.bandDepthsM[b]
-  return { x, y, w: grid.bayWidthM, h: grid.bandDepthsM[addr.band] }
-}
-
-// The bounding rectangle of the whole built grid (all cells).
-export function gridBoundsM(grid: BayGrid): RectM {
+// The bounding rectangle of the whole built board (all cells).
+export function boardBoundsM(board: Board): RectM {
   return {
-    x: grid.originM.x,
-    y: grid.originM.y,
-    w: grid.bayWidthM * grid.bayCount,
-    h: grid.bandDepthsM.reduce((sum, d) => sum + d, 0),
+    x: board.originM.x,
+    y: board.originM.y,
+    w: board.colWidthM * board.colCount,
+    h: board.bandDepthsM.reduce((sum, d) => sum + d, 0),
   }
 }
 
@@ -38,8 +28,8 @@ export function fitFontSizeM(label: string, cellWidthM: number, base: number): n
 
 // --- section geometry ---
 // The section's horizontal axis runs front-to-back (the plan's depth).
-export function sectionWidthM(grid: BayGrid): number {
-  return gridBoundsM(grid).h
+export function sectionWidthM(board: Board): number {
+  return boardBoundsM(board).h
 }
 
 // Internal floor/ceiling slab heights (above the ground level) and the
@@ -59,7 +49,11 @@ export function sectionHeightsM(concept: Concept): SectionHeightsM {
 // True when a cell is an open void on every level — a courtyard cut
 // straight through the building, floor to roof.
 export function isFullyVoidCell(concept: Concept, addr: CellAddr): boolean {
-  return concept.levels.every((level) => level.assignments[cellKey(addr)]?.kind === 'open')
+  return concept.levels.every((level) =>
+    level.placements.some(
+      (p) => p.colStart === addr.col && p.bandStart === addr.band && p.fill?.kind === 'open',
+    ),
+  )
 }
 
 export interface SectionSegmentM {
@@ -76,25 +70,32 @@ export interface SectionSegmentM {
 // stair sits (so the stair always reads as connecting the levels). When a
 // single band holds both, it's split into two narrower segments so neither
 // is lost.
+//
+// The spine's column index isn't stored on Concept (Spine is xM/widthM
+// only), but the stair is always placed on the spine (validate() asserts
+// this), so stair.colStart doubles as the spine's column for this cut.
 export function sectionSegmentsM(concept: Concept): SectionSegmentM[] {
-  const { grid, spine, stair, courtyard } = concept
-  const courtyardBands = new Set((courtyard ?? []).map((c) => c.band))
-  const courtyardCol = courtyard?.[0]?.col
+  const { board, stair, courtyard } = concept
+  const spineCol = stair.colStart
+  const courtyardBands = new Set((courtyard ?? []).map((c) => c.bandStart))
+  const courtyardCol = courtyard?.[0]?.colStart
   const segments: SectionSegmentM[] = []
 
-  for (let band = 0; band < grid.bandCount; band++) {
-    const x = bandOffsetM(grid, band)
-    const w = grid.bandDepthsM[band]
+  let offset = 0
+  for (let band = 0; band < board.bandCount; band++) {
+    const x = offset
+    const w = board.bandDepthsM[band]
+    offset += w
     const hasCourtyard = courtyardCol !== undefined && courtyardBands.has(band)
-    const hasStair = stair.band === band
+    const hasStair = stair.bandStart === band
 
-    if (hasCourtyard && hasStair && courtyardCol !== spine.col) {
+    if (hasCourtyard && hasStair && courtyardCol !== spineCol) {
       segments.push({ addr: { col: courtyardCol, band }, x, w: w / 2 })
-      segments.push({ addr: { col: spine.col, band }, x: x + w / 2, w: w / 2 })
+      segments.push({ addr: { col: spineCol, band }, x: x + w / 2, w: w / 2 })
     } else if (hasCourtyard) {
       segments.push({ addr: { col: courtyardCol as number, band }, x, w })
     } else {
-      segments.push({ addr: { col: spine.col, band }, x, w })
+      segments.push({ addr: { col: spineCol, band }, x, w })
     }
   }
 

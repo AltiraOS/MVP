@@ -24,7 +24,7 @@ export interface Schedules {
 // cell occupancy in metres (brief §2, §6) — never a new measurement, never
 // a structural or compliance judgement. Areas are indicative.
 export function deriveSchedules(concept: Concept): Schedules {
-  const { grid, levels } = concept
+  const { levels } = concept
   const rooms: RoomScheduleRow[] = []
   const outdoor: RoomScheduleRow[] = []
   const byKind: Partial<Record<FormKind, number>> = {}
@@ -32,17 +32,17 @@ export function deriveSchedules(concept: Concept): Schedules {
   let openSpaceM2 = 0
 
   for (const level of levels) {
-    for (const [key, fill] of Object.entries(level.assignments)) {
-      const band = Number(key.split(':')[1])
-      const areaM2 = grid.bayWidthM * grid.bandDepthsM[band]
-      const row: RoomScheduleRow = { level: level.id, label: fill.label, kind: fill.kind, areaM2 }
+    for (const p of level.placements) {
+      if (!p.fill) continue
+      const areaM2 = p.widthM * p.depthM
+      const row: RoomScheduleRow = { level: level.id, label: p.fill.label, kind: p.fill.kind, areaM2 }
 
-      byKind[fill.kind] = (byKind[fill.kind] ?? 0) + areaM2
+      byKind[p.fill.kind] = (byKind[p.fill.kind] ?? 0) + areaM2
 
-      if (fill.kind === 'open') {
+      if (p.fill.kind === 'open') {
         openSpaceM2 += areaM2
         outdoor.push(row)
-      } else if (fill.kind === 'outdoor-room') {
+      } else if (p.fill.kind === 'outdoor-room') {
         builtM2 += areaM2
         outdoor.push(row)
       } else {

@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { assembleConcept } from './assemble'
 import { DEFAULT_BRIEF, deriveInitialSelections } from './brief'
-import { cellKey } from './grid'
 import type { BriefAnswers } from './types'
 
 const sampleBrief: BriefAnswers = {
@@ -28,16 +27,16 @@ describe('assembleConcept', () => {
     expect(JSON.stringify(a)).toBe(JSON.stringify(b))
   })
 
-  it('derives the bay grid in metres from the chosen site', () => {
+  it('derives the board in metres from the chosen site', () => {
     const selections = deriveInitialSelections(sampleBrief)
     const standard = assembleConcept(sampleBrief, { ...selections, site: 'site-standard' })
     const narrow = assembleConcept(sampleBrief, { ...selections, site: 'site-narrow' })
 
     // standard: (15 - 2*1.5) / 4 = 3
-    expect(standard.grid.bayWidthM).toBeCloseTo(3, 5)
+    expect(standard.board.colWidthM).toBeCloseTo(3, 5)
     // narrow: (10 - 2*0.9) / 4 = 2.05
-    expect(narrow.grid.bayWidthM).toBeCloseTo(2.05, 5)
-    expect(standard.grid.bayWidthM).not.toBe(narrow.grid.bayWidthM)
+    expect(narrow.board.colWidthM).toBeCloseTo(2.05, 5)
+    expect(standard.board.colWidthM).not.toBe(narrow.board.colWidthM)
   })
 
   it('cuts the courtyard as a void through every level it spans', () => {
@@ -47,8 +46,11 @@ describe('assembleConcept', () => {
     expect(concept.courtyard).toHaveLength(2)
     for (const cell of concept.courtyard ?? []) {
       for (const level of concept.levels) {
-        expect(level.voids.some((v) => v.col === cell.col && v.band === cell.band)).toBe(true)
-        expect(level.assignments[cellKey(cell)]).toEqual({ kind: 'open', label: 'Courtyard' })
+        const placement = level.placements.find(
+          (p) => p.colStart === cell.colStart && p.bandStart === cell.bandStart,
+        )
+        expect(placement?.void).toBe(true)
+        expect(placement?.fill).toEqual({ kind: 'open', label: 'Courtyard' })
       }
     }
   })
@@ -57,10 +59,14 @@ describe('assembleConcept', () => {
     const selections = deriveInitialSelections(sampleBrief)
 
     const central = assembleConcept(sampleBrief, { ...selections, 'spine-stair': 'stair-central' })
-    expect(central.stair).toEqual({ col: central.spine.col, band: 1 })
+    expect(central.stair.xM).toBeGreaterThanOrEqual(central.spine.xM)
+    expect(central.stair.xM).toBeLessThan(central.spine.xM + central.spine.widthM)
+    expect(central.stair.bandStart).toBe(1)
 
     const rear = assembleConcept(sampleBrief, { ...selections, 'spine-stair': 'stair-rear' })
-    expect(rear.stair).toEqual({ col: rear.spine.col, band: 2 })
+    expect(rear.stair.xM).toBeGreaterThanOrEqual(rear.spine.xM)
+    expect(rear.stair.xM).toBeLessThan(rear.spine.xM + rear.spine.widthM)
+    expect(rear.stair.bandStart).toBe(2)
   })
 
   it('routes to Pro when the home includes a work space', () => {
@@ -82,7 +88,8 @@ describe('assembleConcept', () => {
 
     // outdoor-rooms-deck is unavailable on a narrow lot, so it falls back
     // to outdoor-rooms-none and leaves (3,1) as the indoor living card set it.
-    expect(concept.levels[0].assignments['3:1']).toEqual({ kind: 'living', label: 'Family Room' })
+    const placement = concept.levels[0].placements.find((p) => p.colStart === 3 && p.bandStart === 1)
+    expect(placement?.fill).toEqual({ kind: 'living', label: 'Family Room' })
     expect(concept.warnings.length).toBeGreaterThan(0)
   })
 })

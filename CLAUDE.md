@@ -27,34 +27,42 @@ brief wins.**
 
 ## Architecture you must not violate
 
-1. **Bay grid is the single source of truth.** Everything is located by a bay address
-   `(col, band)` — never pixels. `bayWidthM = usableFrontageM / bayCount`, in meters.
-   Pixels exist only at render time via one viewBox transform.
+1. **The board is the single source of truth, at 1m resolution.** Every placement is
+   located in metres on a 1m × 1m board (`widthM` columns × `depthM` rows) — never pixels.
+   Depth is organized in fixed **4m bands** front-to-back (`bandIndex = floor(yM / 4)`);
+   width comes from the site frontage. The 1m grid is internal measurement/snapping
+   precision only — **never** expose free 1m placement to the customer. Pixels exist only
+   at render time via one viewBox transform.
+1. **Cards are fixed-size placements, not free cells.** A card has a fixed `widthM` /
+   `depthM` footprint (most align to whole 4m bands) and is placed as
+   `{ cardId, level, xM, yM, widthM, depthM, bandStart, bandSpan }`. A card never draws or
+   positions itself — the assembler places it into one of the parti's allowed slots.
 1. **One model → pure renderers.** `PlanView` and `SectionView` are pure functions of one
-   `Concept`. Renderers never compute placement. If plan and section disagree, that’s a bug.
+   `Concept`, drawing only from its placed cards. Renderers never compute or invent
+   placement. If plan and section disagree, that's a bug.
 1. **Deterministic assembly.** `assembleConcept` is pure: no `Math.random`, no input
    mutation, no key-order dependence. Same inputs → identical output.
-1. **Cards are intent.** A card fills/modifies a bay cell or sets a parameter. It never draws
-   or positions geometry. The assembler resolves placement against the parti.
-1. **Partis give the bones.** Each archetype → a curated skeleton (bay count, band ratios,
-   spine column, fixed cells). Cards vary the fill, not the skeleton.
+1. **Partis give the bones.** Each archetype → a curated skeleton (nominal board size, fixed
+   4m bands, spine position, fixed placements). Cards vary the fill, not the skeleton.
 1. **Card thumbnails are the real renderers at small scale** — never hand-drawn art.
 
 ## Invariants (asserted in `validate()`, covered by tests)
 
-- `stair.col === spine.col` — the stair is always on the spine.
-- A courtyard is **open cells** cut as a **void through every level it spans** — never a
-  filled room. It must read as open in section.
-- A cell holds at most one fill per level. Built cells stay within setbacks.
-- All levels share the ground bay columns.
+- The stair's placement `xM` falls within the spine's x-range, on every level — the stair is
+  always on the spine.
+- A courtyard is a **void rectangle** cut through **every level it spans** — never a filled
+  room, never a card placement with a fill. It must read as open in section.
+- No two card placements overlap on the same level. Built placements stay within setbacks.
+- All levels share the same board (`widthM` / `depthM` / band layout).
 - The board is always **complete**: a missing card → parti default + a warning, never a hole.
-- Pro ⇒ levels ≥ 3 or a `work`/`retail` cell exists.
+- Pro ⇒ levels ≥ 3 or a `work`/`retail` placement exists.
 
 ## Anti-patterns (these sank the previous build — do not repeat)
 
-- Bays/positions in pixels • two owners of cell assignment • renderers recomputing geometry •
-  stair placed by coordinate • courtyard as a filled block • per-level independent grids •
-  randomness or shared mutation in assembly • shipping the happy path with no `validate()`.
+- Board positions in pixels • free 1m placement exposed to the customer • two owners of
+  placement state • renderers recomputing or inventing geometry • stair placed off-spine •
+  courtyard as a filled block • per-level independent boards • randomness or shared mutation
+  in assembly • shipping the happy path with no `validate()`.
 
 ## Copy
 

@@ -15,7 +15,7 @@ export interface TierResult {
 export function determineTier(concept: Concept, brief: BriefAnswers): TierResult {
   const hasExtraLevels = concept.levels.length >= 3
   const hasWorkOrRetail = concept.levels.some((level) =>
-    Object.values(level.assignments).some((fill) => fill.kind === 'work' || fill.kind === 'retail'),
+    level.placements.some((p) => p.fill?.kind === 'work' || p.fill?.kind === 'retail'),
   )
 
   if (!hasExtraLevels && !hasWorkOrRetail) {

@@ -22,38 +22,55 @@ describe('validate', () => {
 
   it('rejects a stair that is off the spine', () => {
     const concept = clone(validConcept())
-    concept.stair = { col: concept.spine.col + 1, band: concept.stair.band }
+    concept.stair = { ...concept.stair, xM: concept.spine.xM + concept.spine.widthM + 1 }
     expect(() => validate(concept)).toThrow(/spine/)
   })
 
-  it('rejects a courtyard cell missing from a level\'s voids', () => {
+  it('rejects a courtyard cell missing from a level\'s placements', () => {
     const concept = clone(validConcept())
     const courtyardCell = concept.courtyard?.[0]
     if (!courtyardCell) throw new Error('expected a courtyard cell')
-    concept.levels[1].voids = concept.levels[1].voids.filter(
-      (v) => !(v.col === courtyardCell.col && v.band === courtyardCell.band),
+    concept.levels[1].placements = concept.levels[1].placements.filter(
+      (p) => !(p.colStart === courtyardCell.colStart && p.bandStart === courtyardCell.bandStart),
     )
     expect(() => validate(concept)).toThrow(/open void/)
   })
 
-  it('rejects an assignment outside the grid', () => {
+  it('rejects a placement outside the board', () => {
     const concept = clone(validConcept())
-    concept.levels[0].assignments['99:99'] = { kind: 'living', label: 'Living' }
+    concept.levels[0].placements.push({
+      cardId: 'test',
+      level: 'ground',
+      xM: 0,
+      yM: 0,
+      widthM: 1,
+      depthM: 1,
+      colStart: 99,
+      colSpan: 1,
+      bandStart: 99,
+      bandSpan: 1,
+      fill: { kind: 'living', label: 'Living' },
+    })
     expect(() => validate(concept)).toThrow(/outside the/)
   })
 
-  it('rejects a void cell whose assignment is not "open"', () => {
+  it('rejects a void cell whose fill is not "open"', () => {
     const concept = clone(validConcept())
     const courtyardCell = concept.courtyard?.[0]
     if (!courtyardCell) throw new Error('expected a courtyard cell')
-    const key = `${courtyardCell.col}:${courtyardCell.band}`
-    concept.levels[0].assignments[key] = { kind: 'living', label: 'Living' }
+    const placement = concept.levels[0].placements.find(
+      (p) => p.colStart === courtyardCell.colStart && p.bandStart === courtyardCell.bandStart,
+    )
+    if (!placement) throw new Error('expected a courtyard placement')
+    placement.fill = { kind: 'living', label: 'Living' }
     expect(() => validate(concept)).toThrow(/must be an open void/)
   })
 
   it('rejects an incomplete board', () => {
     const concept = clone(validConcept())
-    delete concept.levels[0].assignments['1:0']
+    concept.levels[0].placements = concept.levels[0].placements.filter(
+      (p) => !(p.colStart === 1 && p.bandStart === 0),
+    )
     expect(() => validate(concept)).toThrow(/unfilled/)
   })
 

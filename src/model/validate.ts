@@ -1,5 +1,4 @@
-import type { Concept } from './types'
-import { cellKey, sameCell } from './grid'
+import type { CardPlacement, Concept, Level } from './types'
 import { PARTIS } from './partis'
 
 // Asserts every invariant from brief §5. Throws on the first violation —
@@ -8,81 +7,82 @@ import { PARTIS } from './partis'
 export function validate(concept: Concept): void {
   assertStairOnSpine(concept)
   assertCourtyardVoids(concept)
-  assertCellsWithinGrid(concept)
+  assertPlacementsWithinBoard(concept)
+  assertNoOverlaps(concept)
   assertVoidConsistency(concept)
   assertComplete(concept)
   assertTierInvariant(concept)
 }
 
+function placementAt(level: Level, col: number, band: number): CardPlacement | undefined {
+  return level.placements.find((p) => p.colStart === col && p.bandStart === band)
+}
+
 function assertStairOnSpine(concept: Concept): void {
-  if (concept.stair.col !== concept.spine.col) {
+  const { stair, spine } = concept
+  if (stair.xM < spine.xM || stair.xM >= spine.xM + spine.widthM) {
     throw new Error(
-      `Invariant violated: stair (col ${concept.stair.col}) must sit on the spine (col ${concept.spine.col}).`,
+      `Invariant violated: stair (xM ${stair.xM}) must sit on the spine (xM ${spine.xM}..${spine.xM + spine.widthM}).`,
     )
   }
 }
 
-// Courtyard cells must be 'open' and listed as voids on every level — they
-// are a cut through the building, not a filled room.
+// Courtyard placements must be 'open' voids, present on every level they
+// span — a cut through the building, not a filled room.
 function assertCourtyardVoids(concept: Concept): void {
-  for (const cell of concept.courtyard ?? []) {
+  for (const court of concept.courtyard ?? []) {
     for (const level of concept.levels) {
-      const fill = level.assignments[cellKey(cell)]
-      const inVoids = level.voids.some((v) => sameCell(v, cell))
-      if (!inVoids || !fill || fill.kind !== 'open') {
+      const placement = placementAt(level, court.colStart, court.bandStart)
+      if (!placement || !placement.void || placement.fill?.kind !== 'open') {
         throw new Error(
-          `Invariant violated: courtyard cell ${cellKey(cell)} must be an open void on level "${level.id}".`,
+          `Invariant violated: courtyard cell ${court.colStart}:${court.bandStart} must be an open void on level "${level.id}".`,
         )
       }
     }
   }
 }
 
-function assertCellsWithinGrid(concept: Concept): void {
-  const { bayCount, bandCount } = concept.grid
-  const inBounds = (col: number, band: number) =>
-    col >= 0 && col < bayCount && band >= 0 && band < bandCount
+function assertPlacementsWithinBoard(concept: Concept): void {
+  const { colCount, bandCount } = concept.board
+  const inBounds = (col: number, band: number) => col >= 0 && col < colCount && band >= 0 && band < bandCount
 
   for (const level of concept.levels) {
-    for (const key of Object.keys(level.assignments)) {
-      const [col, band] = key.split(':').map(Number)
-      if (!inBounds(col, band)) {
+    for (const p of level.placements) {
+      if (!inBounds(p.colStart, p.bandStart)) {
         throw new Error(
-          `Invariant violated: cell ${key} on level "${level.id}" is outside the ${bayCount}x${bandCount} grid.`,
-        )
-      }
-    }
-    for (const v of level.voids) {
-      if (!inBounds(v.col, v.band)) {
-        throw new Error(
-          `Invariant violated: void ${cellKey(v)} on level "${level.id}" is outside the ${bayCount}x${bandCount} grid.`,
+          `Invariant violated: cell ${p.colStart}:${p.bandStart} on level "${level.id}" is outside the ${colCount}x${bandCount} board.`,
         )
       }
     }
   }
 }
 
-// A cell holds at most one fill per level (guaranteed by the assignments
-// map itself); here we check the 'open'/voids bookkeeping stays consistent.
+// No two placements on the same level may occupy the same cell.
+function assertNoOverlaps(concept: Concept): void {
+  for (const level of concept.levels) {
+    const seen = new Set<string>()
+    for (const p of level.placements) {
+      const key = `${p.colStart}:${p.bandStart}`
+      if (seen.has(key)) {
+        throw new Error(`Invariant violated: cell ${key} on level "${level.id}" has more than one placement.`)
+      }
+      seen.add(key)
+    }
+  }
+}
+
+// A placement marked open must be void, and vice versa.
 function assertVoidConsistency(concept: Concept): void {
   for (const level of concept.levels) {
-    for (const [key, fill] of Object.entries(level.assignments)) {
-      const isVoid = level.voids.some((v) => cellKey(v) === key)
-      if (fill.kind === 'open' && !isVoid) {
+    for (const p of level.placements) {
+      if (p.fill?.kind === 'open' && !p.void) {
         throw new Error(
-          `Invariant violated: cell ${key} on level "${level.id}" is marked open but missing from voids.`,
+          `Invariant violated: cell ${p.colStart}:${p.bandStart} on level "${level.id}" is marked open but is not a void.`,
         )
       }
-      if (isVoid && fill.kind !== 'open') {
+      if (p.void && p.fill?.kind !== 'open') {
         throw new Error(
-          `Invariant violated: void cell ${key} on level "${level.id}" must have kind "open".`,
-        )
-      }
-    }
-    for (const v of level.voids) {
-      if (!level.assignments[cellKey(v)]) {
-        throw new Error(
-          `Invariant violated: void cell ${cellKey(v)} on level "${level.id}" has no "open" assignment.`,
+          `Invariant violated: void cell ${p.colStart}:${p.bandStart} on level "${level.id}" must have kind "open".`,
         )
       }
     }
@@ -102,15 +102,15 @@ function assertComplete(concept: Concept): void {
   if (!ground) throw new Error('Invariant violated: concept has no ground level.')
 
   for (const fixed of parti.fixed) {
-    if (!ground.assignments[cellKey(fixed.addr)]) {
-      throw new Error(`Invariant violated: ground cell ${cellKey(fixed.addr)} is unfilled.`)
+    if (!placementAt(ground, fixed.addr.col, fixed.addr.band)) {
+      throw new Error(`Invariant violated: ground cell ${fixed.addr.col}:${fixed.addr.band} is unfilled.`)
     }
   }
   for (const slot of parti.slots) {
     for (const target of slot.targets) {
-      if (!ground.assignments[cellKey(target)]) {
+      if (!placementAt(ground, target.col, target.band)) {
         throw new Error(
-          `Invariant violated: ground cell ${cellKey(target)} (${slot.category}) is unfilled.`,
+          `Invariant violated: ground cell ${target.col}:${target.band} (${slot.category}) is unfilled.`,
         )
       }
     }
@@ -121,17 +121,17 @@ function assertComplete(concept: Concept): void {
     if (!level) throw new Error(`Invariant violated: concept is missing level "${levelDef.id}".`)
 
     for (const fixed of levelDef.fixed) {
-      if (!level.assignments[cellKey(fixed.addr)]) {
+      if (!placementAt(level, fixed.addr.col, fixed.addr.band)) {
         throw new Error(
-          `Invariant violated: ${levelDef.id} cell ${cellKey(fixed.addr)} is unfilled.`,
+          `Invariant violated: ${levelDef.id} cell ${fixed.addr.col}:${fixed.addr.band} is unfilled.`,
         )
       }
     }
     for (const slot of levelDef.slots) {
       for (const target of slot.targets) {
-        if (!level.assignments[cellKey(target)]) {
+        if (!placementAt(level, target.col, target.band)) {
           throw new Error(
-            `Invariant violated: ${levelDef.id} cell ${cellKey(target)} (${slot.category}) is unfilled.`,
+            `Invariant violated: ${levelDef.id} cell ${target.col}:${target.band} (${slot.category}) is unfilled.`,
           )
         }
       }
@@ -143,7 +143,7 @@ function assertTierInvariant(concept: Concept): void {
   if (concept.tier !== 'pro') return
   const hasExtraLevels = concept.levels.length >= 3
   const hasWorkOrRetail = concept.levels.some((level) =>
-    Object.values(level.assignments).some((f) => f.kind === 'work' || f.kind === 'retail'),
+    level.placements.some((p) => p.fill?.kind === 'work' || p.fill?.kind === 'retail'),
   )
   if (!hasExtraLevels && !hasWorkOrRetail) {
     throw new Error(

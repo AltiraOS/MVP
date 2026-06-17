@@ -2,7 +2,8 @@ import type {
   BriefAnswers,
   CardDef,
   CardCategory,
-  CellAddr,
+  CardPlacement,
+  CellFill,
   Concept,
   Level,
   LevelId,
@@ -12,7 +13,7 @@ import type {
 } from './types'
 import { PARTIS } from './partis'
 import { cardsByCategory } from './cards'
-import { cellKey, deriveBayGrid, sameCell } from './grid'
+import { cellKey, cellRectM, deriveBoard } from './grid'
 import { determineTier } from './routing'
 import { validate } from './validate'
 
@@ -50,7 +51,7 @@ export function assembleConcept(brief: BriefAnswers, selections: Selections): Co
   const parti = PARTIS[partiId]
   if (!parti) throw new Error(`Unknown parti: ${partiId}`)
 
-  // --- step 2: site -> siteM, derive grid ---
+  // --- step 2: site -> siteM, create the 1m board with fixed depth bands ---
   const siteCard = resolveCard('site')
   const siteM: SiteM = {
     frontageM: Number(siteCard.params.frontageM),
@@ -63,7 +64,30 @@ export function assembleConcept(brief: BriefAnswers, selections: Selections): Co
     },
     cornerLot: Boolean(siteCard.params.cornerLot),
   }
-  const grid = deriveBayGrid(siteM, parti)
+  const board = deriveBoard(siteM, parti)
+
+  // Places a single fixed-size card op onto the board, overwriting any
+  // existing placement at the same address (later steps may intentionally
+  // replace an earlier step's fill at the same cell).
+  function placeOp(level: Level, addr: { col: number; band: number }, cardId: string, fill?: CellFill, isVoid?: boolean): void {
+    const rect = cellRectM(board, addr)
+    const key = cellKey(addr)
+    level.placements = level.placements.filter((p) => cellKey({ col: p.colStart, band: p.bandStart }) !== key)
+    level.placements.push({
+      cardId,
+      level: level.id,
+      xM: rect.x,
+      yM: rect.y,
+      widthM: rect.w,
+      depthM: rect.h,
+      colStart: addr.col,
+      colSpan: 1,
+      bandStart: addr.band,
+      bandSpan: 1,
+      fill,
+      void: isVoid,
+    })
+  }
 
   // --- initialise levels from the parti skeleton ---
   const levels: Level[] = []
@@ -71,11 +95,10 @@ export function assembleConcept(brief: BriefAnswers, selections: Selections): Co
     id: 'ground',
     floorToFloorM: parti.groundFloorToFloorM,
     baseElevationM: parti.groundBaseElevationM,
-    assignments: {},
-    voids: [],
+    placements: [],
   }
   for (const f of parti.fixed) {
-    ground.assignments[cellKey(f.addr)] = f.fill
+    placeOp(ground, f.addr, 'parti-fixed', f.fill)
   }
   levels.push(ground)
 
@@ -84,11 +107,10 @@ export function assembleConcept(brief: BriefAnswers, selections: Selections): Co
       id: levelDef.id,
       floorToFloorM: levelDef.floorToFloorM,
       baseElevationM: levelDef.baseElevationM,
-      assignments: {},
-      voids: [],
+      placements: [],
     }
     for (const f of levelDef.fixed) {
-      level.assignments[cellKey(f.addr)] = f.fill
+      placeOp(level, f.addr, 'parti-fixed', f.fill)
     }
     levels.push(level)
   }
@@ -103,10 +125,7 @@ export function assembleConcept(brief: BriefAnswers, selections: Selections): Co
       for (const levelId of targetLevels) {
         const level = levelById(levelId)
         if (!level) continue
-        if (op.fill) level.assignments[cellKey(op.addr)] = op.fill
-        if (op.void && !level.voids.some((v) => sameCell(v, op.addr))) {
-          level.voids.push(op.addr)
-        }
+        if (op.fill) placeOp(level, op.addr, card.id, op.fill, op.void)
       }
     }
   }
@@ -119,8 +138,11 @@ export function assembleConcept(brief: BriefAnswers, selections: Selections): Co
       for (const levelId of targetLevels) {
         const level = levelById(levelId)
         if (!level) continue
-        if (level.voids.some((v) => sameCell(v, op.addr))) continue
-        level.assignments[cellKey(op.addr)] = op.fill
+        const existing = level.placements.find(
+          (p) => p.colStart === op.addr.col && p.bandStart === op.addr.band,
+        )
+        if (existing?.void) continue
+        placeOp(level, op.addr, card.id, op.fill)
       }
     }
   }
@@ -128,7 +150,24 @@ export function assembleConcept(brief: BriefAnswers, selections: Selections): Co
   // --- step 3: courtyard -> open cells, cut as voids on every level they span ---
   const courtyardCard = resolveCard('courtyard')
   applyCellOps(courtyardCard, ['ground', 'upper'])
-  const courtyard: CellAddr[] = (courtyardCard.cellOps ?? []).map((op) => op.addr)
+  const courtyardAddrs = (courtyardCard.cellOps ?? []).map((op) => op.addr)
+  const courtyard: CardPlacement[] = courtyardAddrs.map((addr) => {
+    const rect = cellRectM(board, addr)
+    return {
+      cardId: courtyardCard.id,
+      level: 'ground',
+      xM: rect.x,
+      yM: rect.y,
+      widthM: rect.w,
+      depthM: rect.h,
+      colStart: addr.col,
+      colSpan: 1,
+      bandStart: addr.band,
+      bandSpan: 1,
+      fill: { kind: 'open', label: 'Courtyard' },
+      void: true,
+    }
+  })
 
   // --- step 4: indoor-living -> ground slot cells ---
   const indoorLivingCard = resolveCard('indoor-living')
@@ -145,6 +184,20 @@ export function assembleConcept(brief: BriefAnswers, selections: Selections): Co
   if (!stairAddr) throw new Error('spine-stair card must define a target cell')
   if (stairAddr.col !== parti.spineCol) {
     throw new Error('spine-stair card must target the spine column')
+  }
+  const stairRect = cellRectM(board, stairAddr)
+  const stair: CardPlacement = {
+    cardId: stairCard.id,
+    level: 'ground',
+    xM: stairRect.x,
+    yM: stairRect.y,
+    widthM: stairRect.w,
+    depthM: stairRect.h,
+    colStart: stairAddr.col,
+    colSpan: 1,
+    bandStart: stairAddr.band,
+    bandSpan: 1,
+    fill: { kind: 'circulation', label: 'Stair' },
   }
 
   // --- step 7: forecourt / rear-terrace / outdoor-rooms / upper-terrace ---
@@ -170,15 +223,16 @@ export function assembleConcept(brief: BriefAnswers, selections: Selections): Co
     accent: String(paletteCard.params.accent),
   }
 
-  // --- step 9: tier, explanatory copy, validate ---
+  // --- step 9: spine, tier, explanatory copy, validate ---
+  const spineColWidthM = board.colWidthM
   const concept: Concept = {
     tier: 'core',
     archetypeId: parti.id,
     siteM,
-    grid,
+    board,
     levels,
-    spine: { col: parti.spineCol },
-    stair: stairAddr,
+    spine: { xM: board.originM.x + parti.spineCol * spineColWidthM, widthM: spineColWidthM },
+    stair,
     courtyard,
     palette,
     title: '',

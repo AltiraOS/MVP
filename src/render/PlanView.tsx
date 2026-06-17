@@ -1,6 +1,6 @@
 import type { CellAddr, Concept } from '../model/types'
 import { bandOffsetM, cellKey } from '../model/grid'
-import { cellRectM, fitFontSizeM, gridBoundsM } from './geometry'
+import { boardBoundsM, fitFontSizeM } from './geometry'
 import { DimensionLine, NorthMark, ScaleBar, SharedDefs, StreetMark } from './primitives'
 import { FONT_SIZE_M, INK, INK_SOFT, LINE_WEIGHT_M, MARGIN_M } from './tokens'
 
@@ -17,14 +17,14 @@ export interface PlanViewProps {
 }
 
 export function PlanView({ concept, className, highlight, dimensioned }: PlanViewProps) {
-  const { grid, siteM, levels, spine, stair, palette, title } = concept
+  const { board, siteM, levels, spine, stair, palette, title } = concept
   const ground = levels.find((l) => l.id === 'ground')
   // Use the topmost level for the upper-footprint overlay so the dashed outline
   // always reflects the highest part of the building regardless of level count.
   const upper = levels.length > 1 ? levels[levels.length - 1] : undefined
   if (!ground) return null
 
-  const bounds = gridBoundsM(grid)
+  const bounds = boardBoundsM(board)
   const highlightKeys = highlight ? new Set(highlight.map(cellKey)) : null
 
   const viewMinX = -MARGIN_M
@@ -32,25 +32,18 @@ export function PlanView({ concept, className, highlight, dimensioned }: PlanVie
   const viewW = siteM.frontageM + MARGIN_M * 2
   const viewH = siteM.depthM + MARGIN_M * 2.4
 
-  const spineX = bounds.x + (spine.col + 0.5) * grid.bayWidthM
-
-  const cells: { addr: CellAddr; key: string }[] = []
-  for (let band = 0; band < grid.bandCount; band++) {
-    for (let col = 0; col < grid.bayCount; col++) {
-      cells.push({ addr: { col, band }, key: cellKey({ col, band }) })
-    }
-  }
+  const spineX = spine.xM + spine.widthM / 2
 
   // Upper-level overlay: cells the ground floor builds but the upper level
   // doesn't reach (a flat roof below) get a dashed outline, so the upper
   // footprint reads as different from the ground floor where it actually is.
   const upperGaps = upper
-    ? cells
-        .filter(({ key }) => ground.assignments[key] && !upper.assignments[key])
-        .map(({ addr }) => cellRectM(grid, addr))
+    ? ground.placements.filter(
+        (gp) => !upper.placements.some((up) => up.colStart === gp.colStart && up.bandStart === gp.bandStart),
+      )
     : []
 
-  const stairRect = cellRectM(grid, stair)
+  const stairRect = { x: stair.xM, y: stair.yM, w: stair.widthM, h: stair.depthM }
 
   return (
     <svg
@@ -84,31 +77,38 @@ export function PlanView({ concept, className, highlight, dimensioned }: PlanVie
         strokeDasharray="0.2 0.15"
       />
 
-      {/* ground cells: poche walls, courtyard as open void with accent fill */}
-      {cells.map(({ addr, key }) => {
-        const fill = ground.assignments[key]
-        if (!fill) return null
-        const r = cellRectM(grid, addr)
-        const isVoid = fill.kind === 'open'
+      {/* ground placements: poche walls, courtyard as open void with accent fill */}
+      {ground.placements.map((p) => {
+        if (!p.fill) return null
+        const key = cellKey({ col: p.colStart, band: p.bandStart })
+        const isVoid = p.fill.kind === 'open'
         const dimmed = highlightKeys ? !highlightKeys.has(key) : false
-        const fontSize = fitFontSizeM(fill.label, r.w, FONT_SIZE_M.label)
+        const fontSize = fitFontSizeM(p.fill.label, p.widthM, FONT_SIZE_M.label)
 
         return (
           <g key={key} opacity={dimmed ? 0.35 : 1}>
             {isVoid ? (
-              <rect x={r.x} y={r.y} width={r.w} height={r.h} fill={palette.accent} fillOpacity={0.18} />
+              <rect x={p.xM} y={p.yM} width={p.widthM} height={p.depthM} fill={palette.accent} fillOpacity={0.18} />
             ) : (
-              <rect x={r.x} y={r.y} width={r.w} height={r.h} fill="none" stroke={INK} strokeWidth={LINE_WEIGHT_M.secondary} />
+              <rect
+                x={p.xM}
+                y={p.yM}
+                width={p.widthM}
+                height={p.depthM}
+                fill="none"
+                stroke={INK}
+                strokeWidth={LINE_WEIGHT_M.secondary}
+              />
             )}
             <text
-              x={r.x + r.w / 2}
-              y={r.y + r.h / 2}
+              x={p.xM + p.widthM / 2}
+              y={p.yM + p.depthM / 2}
               textAnchor="middle"
               dominantBaseline="middle"
               fontSize={fontSize}
               fill={isVoid ? INK_SOFT : INK}
             >
-              {fill.label}
+              {p.fill.label}
             </text>
           </g>
         )
@@ -155,13 +155,13 @@ export function PlanView({ concept, className, highlight, dimensioned }: PlanVie
       </g>
 
       {/* upper-level overlay: dashed outline where the upper floor stops */}
-      {upperGaps.map((r, i) => (
+      {upperGaps.map((p) => (
         <rect
-          key={i}
-          x={r.x}
-          y={r.y}
-          width={r.w}
-          height={r.h}
+          key={cellKey({ col: p.colStart, band: p.bandStart })}
+          x={p.xM}
+          y={p.yM}
+          width={p.widthM}
+          height={p.depthM}
           fill="none"
           stroke={INK_SOFT}
           strokeWidth={LINE_WEIGHT_M.secondary}
@@ -180,23 +180,23 @@ export function PlanView({ concept, className, highlight, dimensioned }: PlanVie
             y2={bounds.y - 0.7}
             label={`${bounds.w.toFixed(2)} m overall`}
           />
-          {Array.from({ length: grid.bayCount }).map((_, col) => (
+          {Array.from({ length: board.colCount }).map((_, col) => (
             <DimensionLine
               key={col}
-              x1={bounds.x + col * grid.bayWidthM}
+              x1={bounds.x + col * board.colWidthM}
               y1={bounds.y - 0.35}
-              x2={bounds.x + (col + 1) * grid.bayWidthM}
+              x2={bounds.x + (col + 1) * board.colWidthM}
               y2={bounds.y - 0.35}
-              label={`${grid.bayWidthM.toFixed(2)} m`}
+              label={`${board.colWidthM.toFixed(2)} m`}
             />
           ))}
-          {grid.bandDepthsM.map((depthM, band) => (
+          {board.bandDepthsM.map((depthM, band) => (
             <DimensionLine
               key={band}
               x1={bounds.x - 0.5}
-              y1={grid.originM.y + bandOffsetM(grid, band)}
+              y1={board.originM.y + bandOffsetM(board, band)}
               x2={bounds.x - 0.5}
-              y2={grid.originM.y + bandOffsetM(grid, band + 1)}
+              y2={board.originM.y + bandOffsetM(board, band + 1)}
               label={`${depthM.toFixed(2)} m`}
             />
           ))}

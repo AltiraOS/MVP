@@ -53,7 +53,8 @@ for (const [partiId] of Object.entries(PARTIS)) {
       const resolved = resolveOnSite(baseline, REAL_SITE)
 
       expect(() => validate(resolved)).not.toThrow()
-      expect(resolved.stair.col).toBe(resolved.spine.col)
+      expect(resolved.stair.xM).toBeGreaterThanOrEqual(resolved.spine.xM)
+      expect(resolved.stair.xM).toBeLessThan(resolved.spine.xM + resolved.spine.widthM)
       expect(findBannedWords(resolved.tradeoffs)).toEqual([])
     })
 
@@ -95,11 +96,11 @@ for (const [partiId] of Object.entries(PARTIS)) {
       const resolved = resolveOnSite(baseline, REAL_SITE)
       const schedules = deriveSchedules(resolved)
 
-      const totalAssignments = resolved.levels.reduce(
-        (sum, level) => sum + Object.keys(level.assignments).length,
+      const totalPlacements = resolved.levels.reduce(
+        (sum, level) => sum + level.placements.filter((p) => p.fill).length,
         0,
       )
-      expect(schedules.rooms.length + schedules.outdoor.length).toBe(totalAssignments)
+      expect(schedules.rooms.length + schedules.outdoor.length).toBe(totalPlacements)
       expect(schedules.assumptions.length).toBeGreaterThan(0)
       expect(findBannedWords(schedules.assumptions)).toEqual([])
 

@@ -1,18 +1,24 @@
 // Core data model. See altira-mvp-oneshot-brief.md §5 — these types are the
 // single source of truth; renderers and the assembler only ever read them.
 
-// --- the grid: the ONLY way to locate anything ---
-export interface BayGrid {
-  bayCount: number; // columns across frontage
-  bandCount: number; // depth bands front -> back
-  originM: { x: number; y: number };
-  bayWidthM: number; // DERIVED = usableFrontageM / bayCount
-  bandDepthsM: number[]; // length === bandCount, sums to usable depth
+// --- the board: the ONLY way to locate anything, at 1m resolution ---
+export interface Board {
+  widthM: number // usable building width, metres (1m resolution)
+  depthM: number // usable building depth, metres (1m resolution)
+  originM: { x: number; y: number }
+  colCount: number // columns across the frontage
+  colWidthM: number // DERIVED = widthM / colCount
+  bandCount: number // depth bands front -> back, nominally ~4m each
+  bandDepthsM: number[] // length === bandCount, sums to depthM
 }
 
+// CellAddr is an authoring-time coordinate into the board's column/band
+// grid — never a customer-facing concept and never exposed as free 1m
+// placement. The assembler resolves every CellAddr into a real metre
+// rectangle exactly once, via cellRectM; nothing downstream re-derives it.
 export interface CellAddr {
-  col: number;
-  band: number;
+  col: number
+  band: number
 }
 
 export type FormKind =
@@ -36,17 +42,36 @@ export interface CellFill {
 
 export type LevelId = 'ground' | 'upper' | 'level1' | 'level2plus'
 
+// A card placement: a fixed-size rectangle, in metres, occupying one or
+// more 1m cells on one level. This is the ONLY record of what's built —
+// renderers draw placements exactly as given, never recomputing position
+// from an address.
+export interface CardPlacement {
+  cardId: string
+  level: LevelId
+  xM: number
+  yM: number
+  widthM: number
+  depthM: number
+  colStart: number
+  colSpan: number
+  bandStart: number
+  bandSpan: number
+  fill?: CellFill // omit for a void (courtyard) placement
+  void?: boolean
+}
+
 export interface Level {
   id: LevelId
   floorToFloorM: number
   baseElevationM: number
-  assignments: Record<string, CellFill> // key = `${col}:${band}`; absent = unbuilt
-  voids: CellAddr[] // open-to-sky / double-height cells (courtyard)
+  placements: CardPlacement[] // the only record of what's built on this level
 }
 
 export interface Spine {
-  col: number
-} // spine runs down one bay column, all levels
+  xM: number
+  widthM: number
+} // a strip street-to-rear, all levels
 
 export interface SiteM {
   frontageM: number
@@ -68,11 +93,11 @@ export interface Concept {
   tier: 'core' | 'pro'
   archetypeId: string
   siteM: SiteM
-  grid: BayGrid
+  board: Board
   levels: Level[] // ground first
   spine: Spine
-  stair: CellAddr // INVARIANT: stair.col === spine.col
-  courtyard?: CellAddr[] // open cells; appear in every level's voids
+  stair: CardPlacement // INVARIANT: stair.xM within [spine.xM, spine.xM + spine.widthM)
+  courtyard?: CardPlacement[] // void placements; each appears on every level it spans
   palette: Palette
 
   // explanatory (Grade 8), filled by assemble + validate:
@@ -98,9 +123,15 @@ export interface PartiLevelDef {
   unbuilt?: CellAddr[] // cells with no default assignment (roof/terrace over below)
 }
 
+// DECISION: a parti is authored once and resolved onto whatever site the
+// customer picks, so its slots/fixed cells are addressed by (col, band) —
+// the same 1m-grid coordinate the board itself uses — rather than baked
+// metres for one nominal site. assembleConcept (and resolveOnSite, against
+// the same real board) is the only place a CellAddr becomes a real metre
+// rectangle, via cellRectM in grid.ts.
 export interface Parti {
   id: string // matches an archetype emphasis
-  bayCount: number
+  colCount: number
   bandCount: number
   bandRatios: number[]
   spineCol: number
@@ -127,9 +158,11 @@ export type CardCategory =
   | 'palette'
 
 // DECISION: a flat Record<string, primitive> can't express "fill these
-// cells with these kinds/labels" or "make these cells voids". `cellOps`
-// carries that structured intent; `params` stays for scalar settings
-// (site dimensions, palette colours, archetype levels).
+// cells with these kinds/labels" or "make these cells voids", and a single
+// card can resolve into several rooms at once (e.g. "Family bedrooms" fills
+// four cells). `cellOps` carries that structured intent as a list of
+// fixed-size placements-to-be, addressed by (col, band); `params` stays for
+// scalar settings (site dimensions, palette colours, archetype levels).
 export interface CellOp {
   addr: CellAddr
   fill?: CellFill // omit + void:true to cut a void instead
