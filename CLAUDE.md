@@ -5,9 +5,11 @@ never draws; they start from a pre-filled suggested concept and make small swaps
 board updates live. Output is one architectural Plan and one Section plus a calm concept
 write-up.
 
-**The full spec is `./altira-mvp-oneshot-brief.md`. Read it before writing code, and treat
-its §2–§6 as locked. This file is the short, always-loaded version — when they conflict, the
-brief wins.**
+**The full spec for the 5-step journey (Brief → Activate) is `./altira-mvp-oneshot-brief.md`.
+The full spec for everything past Activate — the Project Room — is
+`./altira-project-room-oneshot-brief.md`. Read the relevant one before writing code, and
+treat their locked sections as locked. This file is the short, always-loaded version — when
+they conflict, the relevant brief wins.**
 
 -----
 
